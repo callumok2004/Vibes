@@ -620,7 +620,10 @@
 										<TextBlock FontFamily="Segoe UI" FontSize="13" Foreground="#EFEFF1" Text="Twitch connection" />
 										<TextBlock x:Name="TwitchAuthStatus" Margin="0,2,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" Text="Disconnected" />
 									</StackPanel>
-									<Button Grid.Column="1" x:Name="ConnectTwitchBtn" VerticalAlignment="Center" Click="ConnectTwitch_Click" Content="Connect" Style="{StaticResource ActionBtn}" />
+									<StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+									<Button x:Name="ConnectTwitchBtn" Click="ConnectTwitch_Click" Content="Connect" Style="{StaticResource ActionBtn}" />
+									<Button Margin="6,0,0,0" Click="ReauthorizeTwitch_Click" Content="Reauthorize" Style="{StaticResource ActionBtn}" />
+								</StackPanel>
 								</Grid>
 							</Border>
 								<Border Margin="0,0,0,2" Padding="18,12" Background="#0E0E10" CornerRadius="4" Tag="channel name twitch username">

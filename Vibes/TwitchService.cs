@@ -1,6 +1,9 @@
 using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Net.WebSockets;
 using System.Text;
+using System.Text.Json;
 
 namespace Vibes;
 
@@ -10,7 +13,8 @@ public class TwitchChatMessage
 	public string DisplayName { get; set; } = "";
 	public string Color       { get; set; } = "";
 	public string Message     { get; set; } = "";
-	public string RewardId    { get; set; } = "";
+	public string RewardId      { get; set; } = "";
+	public string RedemptionId  { get; set; } = "";
 	public Dictionary<string, string> Tags { get; set; } = [];
 }
 
@@ -33,6 +37,7 @@ public class TwitchService
 	private ClientWebSocket?         _botWs;
 	private CancellationTokenSource? _botCts;
 
+	private static readonly HttpClient _http = new();
 	private string _channel = "";
 
 	private const string ChannelClientId = "v6jcyt4gcec7vl8luchszezpwnnkip";
@@ -47,8 +52,9 @@ public class TwitchService
 	public async Task AuthorizeAsync() {
 		StatusChanged?.Invoke("Opening browser for authorization…");
 		var token = await ImplicitGrantAsync(ChannelClientId, ChannelPort,
-			"chat:read chat:edit channel:read:redemptions");
-		Credentials.Instance.TwitchAccessToken = token;
+			"chat:read chat:edit channel:read:redemptions channel:manage:redemptions");
+		Credentials.Instance.TwitchAccessToken    = token;
+		Credentials.Instance.TwitchBroadcasterId = "";
 		Credentials.Save();
 		StatusChanged?.Invoke("Authorized");
 	}
@@ -141,6 +147,7 @@ public class TwitchService
 		AppLogger.Instance.Information($"Twitch IRC connected as {_channel} in #{_channel}");
 
 		await ConnectBotAsync();
+		_ = FetchBroadcasterIdAsync();
 
 		IsConnected = true;
 		StatusChanged?.Invoke("Connected");
@@ -174,6 +181,48 @@ public class TwitchService
 			_botCts?.Cancel();
 			_botWs?.Dispose();
 			_botWs = null;
+		}
+	}
+
+	// -- Helix API ---------------------------------------------------------------
+
+	private async Task FetchBroadcasterIdAsync() {
+		if (!string.IsNullOrEmpty(Credentials.Instance.TwitchBroadcasterId)) return;
+		try {
+			using var req = new HttpRequestMessage(HttpMethod.Get, "https://api.twitch.tv/helix/users");
+			req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", Credentials.Instance.TwitchAccessToken.Trim());
+			req.Headers.Add("Client-Id", ChannelClientId);
+			var resp = await _http.SendAsync(req);
+			if (!resp.IsSuccessStatusCode) return;
+			var json = JsonSerializer.Deserialize<JsonElement>(await resp.Content.ReadAsStringAsync());
+			var id   = json.GetProperty("data")[0].GetProperty("id").GetString() ?? "";
+			Credentials.Instance.TwitchBroadcasterId = id;
+			Credentials.Save();
+			AppLogger.Instance.Information($"Broadcaster ID: {id}");
+		}
+		catch (Exception ex) {
+			AppLogger.Instance.Warning($"Failed to fetch broadcaster ID: {ex.Message}");
+		}
+	}
+
+	public async Task UpdateRedemptionAsync(string rewardId, string redemptionId, bool fulfill) {
+		if (string.IsNullOrEmpty(rewardId) || string.IsNullOrEmpty(redemptionId)) return;
+		var broadcasterId = Credentials.Instance.TwitchBroadcasterId;
+		if (string.IsNullOrEmpty(broadcasterId)) return;
+		try {
+			var status = fulfill ? "FULFILLED" : "CANCELED";
+			using var req = new HttpRequestMessage(HttpMethod.Patch,
+				$"https://api.twitch.tv/helix/channel_points/custom_rewards/redemptions" +
+				$"?broadcaster_id={broadcasterId}&reward_id={rewardId}&id={redemptionId}");
+			req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", Credentials.Instance.TwitchAccessToken.Trim());
+			req.Headers.Add("Client-Id", ChannelClientId);
+			req.Content = new StringContent($"{{\"status\":\"{status}\"}}", Encoding.UTF8, "application/json");
+			var resp = await _http.SendAsync(req);
+			if (!resp.IsSuccessStatusCode)
+				AppLogger.Instance.Warning($"Redemption update failed ({status}): {resp.StatusCode}");
+		}
+		catch (Exception ex) {
+			AppLogger.Instance.Warning($"Redemption update error: {ex.Message}");
 		}
 	}
 
@@ -279,8 +328,9 @@ public class TwitchService
 			DisplayName = displayName,
 			Color       = tags.GetValueOrDefault("color") ?? "",
 			Message     = message,
-			RewardId    = tags.GetValueOrDefault("custom-reward-id") ?? "",
-			Tags        = tags,
+			RewardId     = tags.GetValueOrDefault("custom-reward-id") ?? "",
+			RedemptionId = tags.GetValueOrDefault("id") ?? "",
+			Tags         = tags,
 		});
 	}
 

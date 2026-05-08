@@ -621,6 +621,17 @@ if (int.TryParse(VoteSkipCountInput.Text,    out int vs))  c.VoteSkipCount      
 		}
 	}
 
+	private async void ReauthorizeTwitch_Click(object sender, RoutedEventArgs e) {
+		try {
+			await TwitchService.Instance.AuthorizeAsync();
+			await TryConnectTwitchAsync();
+		}
+		catch (Exception ex) {
+			AppLogger.Instance.Error($"Twitch reauthorize failed: {ex.Message}");
+			UpdateTwitchStatus("Reauthorization failed");
+		}
+	}
+
 	private async Task TryConnectTwitchAsync() {
 		try {
 			await TwitchService.Instance.ConnectAsync();

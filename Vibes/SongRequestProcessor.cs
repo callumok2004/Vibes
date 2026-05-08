@@ -164,9 +164,24 @@ public class SongRequestProcessor
 
 		if (!SrEnabled) return;
 
+		bool isReward = source == SongRequestSource.Reward;
+
+		async Task Refund(RefundCondition cond) {
+			if (!isReward || !cfg.RefundConditions.Contains(cond)) return;
+			AppLogger.Instance.Information($"Refunding redemption for {user}: {cond}");
+			await TwitchService.Instance.UpdateRedemptionAsync(msg.RewardId, msg.RedemptionId, fulfill: false);
+		}
+
+		async Task Fulfill() {
+			if (!isReward) return;
+			AppLogger.Instance.Information($"Fulfilling redemption for {user}");
+			await TwitchService.Instance.UpdateRedemptionAsync(msg.RewardId, msg.RedemptionId, fulfill: true);
+		}
+
 		// Blocked user
 		if (cfg.BlockedUsers.Any(u => u.Equals(login, StringComparison.OrdinalIgnoreCase))) {
 			await ReplyAsync(Format(cfg.BotRespBlacklist, user: user));
+			await Refund(RefundCondition.UserBlocked);
 			return;
 		}
 
@@ -175,6 +190,7 @@ public class SongRequestProcessor
 		if ((int)level < cfg.TwSrUserLevel) {
 			await ReplyAsync(Format(cfg.BotRespLevelTooLow, user: user,
 				level: LevelName((TwitchUserLevel)cfg.TwSrUserLevel)));
+			await Refund(RefundCondition.UserLevelTooLow);
 			return;
 		}
 
@@ -185,6 +201,7 @@ public class SongRequestProcessor
 			var remaining = cfg.TwSrCooldown - (now - _lastGlobalSr).TotalSeconds;
 			if (remaining > 0) {
 				await ReplyAsync(Format(cfg.BotRespCooldown, user: user, cd: (int)Math.Ceiling(remaining)));
+				await Refund(RefundCondition.Cooldown);
 				return;
 			}
 		}
@@ -194,6 +211,7 @@ public class SongRequestProcessor
 			var remaining = cfg.TwSrPerUserCooldown - (now - lastUser).TotalSeconds;
 			if (remaining > 0) {
 				await ReplyAsync(Format(cfg.BotRespUserCooldown, user: user, cd: (int)Math.Ceiling(remaining)));
+				await Refund(RefundCondition.UserCooldown);
 				return;
 			}
 		}
@@ -205,6 +223,7 @@ public class SongRequestProcessor
 				r.Requester.Equals(user, StringComparison.OrdinalIgnoreCase) && !r.IsPlayed);
 			if (count >= maxReq) {
 				await ReplyAsync(Format(cfg.BotRespMaxReq, user: user, max: maxReq));
+				await Refund(RefundCondition.MaxRequestsReached);
 				return;
 			}
 		}
@@ -212,6 +231,7 @@ public class SongRequestProcessor
 		// Queue length cap
 		if (cfg.MaxQueueLength > 0 && SongQueue.Pending.Count(r => !r.IsPlayed) >= cfg.MaxQueueLength) {
 			await ReplyAsync(Format(cfg.BotRespQueueFull, user: user, max: cfg.MaxQueueLength));
+			await Refund(RefundCondition.QueueLimitReached);
 			return;
 		}
 
@@ -225,6 +245,7 @@ public class SongRequestProcessor
 
 		if (track == null || string.IsNullOrEmpty(track.TrackId)) {
 			await ReplyAsync(Format(cfg.BotRespNoSong, user: user));
+			await Refund(RefundCondition.SongUnavailable);
 			return;
 		}
 
@@ -232,24 +253,28 @@ public class SongRequestProcessor
 		if (cfg.BlockedArtists.Any(a => track.Artist.Contains(a, StringComparison.OrdinalIgnoreCase)) ||
 		    cfg.BlockedSongs.Any(s => track.Title.Contains(s, StringComparison.OrdinalIgnoreCase))) {
 			await ReplyAsync(Format(cfg.BotRespBlacklist, user: user));
+			await Refund(RefundCondition.SongBlocked);
 			return;
 		}
 
 		// Explicit
 		if (cfg.BlockAllExplicitSongs && track.IsExplicit) {
 			await ReplyAsync(Format(cfg.BotRespExplicit, user: user));
+			await Refund(RefundCondition.TrackIsExplicit);
 			return;
 		}
 
 		// Song length
 		if (cfg.MaxSongLength > 0 && track.DurationMs > cfg.MaxSongLength * 60_000) {
 			await ReplyAsync(Format(cfg.BotRespTooLong, user: user, max: cfg.MaxSongLength));
+			await Refund(RefundCondition.SongTooLong);
 			return;
 		}
 
 		// Already queued
 		if (SongQueue.Pending.Any(r => r.TrackId == track.TrackId && !r.IsPlayed)) {
 			await ReplyAsync(Format(cfg.BotRespIsInQueue, user: user));
+			await Refund(RefundCondition.SongAlreadyInQueue);
 			return;
 		}
 
@@ -257,6 +282,7 @@ public class SongRequestProcessor
 		var ok = await SpotifyService.Instance.AddToQueueAsync(track.TrackId);
 		if (!ok) {
 			await ReplyAsync(Format(cfg.BotRespError, user: user));
+			await Refund(RefundCondition.SongUnavailable);
 			return;
 		}
 
@@ -277,6 +303,7 @@ public class SongRequestProcessor
 			user: user, artist: track.Artist, title: track.Title, pos: pos));
 
 		AppLogger.Instance.Information($"SR: {user} -> {track.Artist} - {track.Title} (#{pos})");
+		await Fulfill();
 	}
 
 	// -- Helpers ---------------------------------------------------------------

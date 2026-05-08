@@ -56,5 +56,8 @@ public enum RefundCondition
 	NoSongFound,
 	TrackIsExplicit,
 	SongBlocked,
-	QueueLimitReached
+	QueueLimitReached,
+	Cooldown,
+	UserCooldown,
+	MaxRequestsReached
 }

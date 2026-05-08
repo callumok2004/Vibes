@@ -8,6 +8,7 @@ public class Credentials
 
 	public string TwitchAccessToken { get; set; } = "";
 	public string TwitchRefreshToken { get; set; } = "";
+	public string TwitchBroadcasterId { get; set; } = "";
 	public string TwitchUserId { get; set; } = "";
 	public string TwitchUserLogin { get; set; } = "";
 	public DateTime TwitchTokenExpiry { get; set; }

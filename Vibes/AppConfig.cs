@@ -58,6 +58,9 @@ public class AppConfig
 		RefundCondition.TrackIsExplicit,
 		RefundCondition.SongBlocked,
 		RefundCondition.QueueLimitReached,
+		RefundCondition.Cooldown,
+		RefundCondition.UserCooldown,
+		RefundCondition.MaxRequestsReached,
 	];
 
 	// -- BOT RESPONSES ---------------------------------------------------------

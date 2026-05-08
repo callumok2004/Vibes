@@ -1,0 +1,16 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Vibes",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "Vibes",
+      "program": "${workspaceFolder}/Vibes/bin/Debug/net10.0-windows/Vibes.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/Vibes/bin/Debug/net10.0-windows",
+      "stopAtEntry": false,
+      "console": "externalTerminal"
+    }
+  ]
+}

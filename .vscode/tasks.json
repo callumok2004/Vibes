@@ -1,0 +1,15 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Vibes",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "build",
+        "${workspaceFolder}/Vibes/Vibes.csproj"
+      ],
+      "problemMatcher": "$msCompile"
+    }
+  ]
+}

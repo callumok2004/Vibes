@@ -798,6 +798,15 @@
 										<TextBox x:Name="RewardIdInput" Grid.Column="1" Style="{StaticResource SettingsInput}" Tag="reward ID" TextChanged="Cfg_Changed" />
 									</Grid>
 								</Border>
+								<Border x:Name="AutoManageRow" Margin="0,0,0,2" Padding="18,12" Background="#0E0E10" CornerRadius="4" Tag="auto fulfill refund redemption channel points">
+									<Grid><Grid.ColumnDefinitions><ColumnDefinition Width="200" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+										<StackPanel VerticalAlignment="Center">
+											<TextBlock FontFamily="Segoe UI" FontSize="13" Foreground="#EFEFF1" Text="Auto manage redemptions" />
+											<TextBlock Margin="0,2,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" Text="Auto fulfill on success, refund on failure" />
+										</StackPanel>
+										<CheckBox x:Name="AutoManageCheck" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Left" Checked="Cfg_CheckChanged" Unchecked="Cfg_CheckChanged" />
+									</Grid>
+								</Border>
 								<Border Margin="0,0,0,2" Padding="18,12" Background="#0E0E10" CornerRadius="4" Tag="min user level viewer follower subscriber moderator">
 									<Grid><Grid.ColumnDefinitions><ColumnDefinition Width="200" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
 										<StackPanel VerticalAlignment="Center">

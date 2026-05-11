@@ -120,6 +120,7 @@ public partial class MainWindow : Window
 		ModeBoth.IsChecked    = c.RequestMode == RequestMode.Both;
 		SrCommandInput.Text   = c.TwSrCommandTrigger;
 		RewardIdInput.Text    = c.TwRewardId;
+		AutoManageCheck.IsChecked = c.AutoManageRedemptions;
 
 		ModeCommand.IsChecked = c.RequestMode == RequestMode.ChatCommand;
 		ModeReward.IsChecked  = c.RequestMode == RequestMode.ChannelReward;
@@ -308,7 +309,8 @@ if (int.TryParse(VoteSkipCountInput.Text,    out int vs))  c.VoteSkipCount      
 		c.AnnounceInChat      = AnnounceInChatCheck.IsChecked   == true;
 		c.AddSrToPlaylist     = AddToPlaylistCheck.IsChecked    == true;
 		c.LimitSrToPlaylist   = LimitToPlaylistCheck.IsChecked  == true;
-		c.BlockAllExplicitSongs = BlockExplicitCheck.IsChecked  == true;
+		c.BlockAllExplicitSongs   = BlockExplicitCheck.IsChecked   == true;
+		c.AutoManageRedemptions   = AutoManageCheck.IsChecked      == true;
 
 		c.StartWithWindows    = StartWithWindowsCheck.IsChecked == true;
 		c.MinimizeToTray      = MinimizeToTrayCheck.IsChecked   == true;

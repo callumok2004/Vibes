@@ -49,6 +49,8 @@ public class AppConfig
 	// Vote skip threshold
 	public int VoteSkipCount { get; set; } = 5;
 
+	public bool AutoManageRedemptions { get; set; } = true;
+
 	// Refund channel points on these conditions
 	public List<RefundCondition> RefundConditions { get; set; } = [
 		RefundCondition.UserLevelTooLow,

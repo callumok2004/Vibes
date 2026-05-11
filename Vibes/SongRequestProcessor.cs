@@ -167,13 +167,13 @@ public class SongRequestProcessor
 		bool isReward = source == SongRequestSource.Reward;
 
 		async Task Refund(RefundCondition cond) {
-			if (!isReward || !cfg.RefundConditions.Contains(cond)) return;
+			if (!isReward || !cfg.AutoManageRedemptions || !cfg.RefundConditions.Contains(cond)) return;
 			AppLogger.Instance.Information($"Refunding redemption for {user}: {cond}");
 			await TwitchService.Instance.UpdateRedemptionAsync(msg.RewardId, msg.RedemptionId, fulfill: false);
 		}
 
 		async Task Fulfill() {
-			if (!isReward) return;
+			if (!isReward || !cfg.AutoManageRedemptions) return;
 			AppLogger.Instance.Information($"Fulfilling redemption for {user}");
 			await TwitchService.Instance.UpdateRedemptionAsync(msg.RewardId, msg.RedemptionId, fulfill: true);
 		}

@@ -666,15 +666,6 @@
 										<CheckBox x:Name="AutoConnectCheck" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Left" Checked="Cfg_CheckChanged" Unchecked="Cfg_CheckChanged" />
 									</Grid>
 								</Border>
-								<Border Margin="0,0,0,2" Padding="18,12" Background="#0E0E10" CornerRadius="4" Tag="only live stream offline pause">
-									<Grid><Grid.ColumnDefinitions><ColumnDefinition Width="200" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
-										<StackPanel VerticalAlignment="Center">
-											<TextBlock FontFamily="Segoe UI" FontSize="13" Foreground="#EFEFF1" Text="Only work when live" />
-											<TextBlock Margin="0,2,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" Text="Pause requests when offline" />
-										</StackPanel>
-										<CheckBox x:Name="OnlyLiveCheck" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Left" Checked="Cfg_CheckChanged" Unchecked="Cfg_CheckChanged" />
-									</Grid>
-								</Border>
 								<Border Margin="0,0,0,2" Padding="18,12" Background="#0E0E10" CornerRadius="4" Tag="announce chat post responses">
 									<Grid><Grid.ColumnDefinitions><ColumnDefinition Width="200" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
 										<StackPanel VerticalAlignment="Center">

@@ -103,7 +103,6 @@ public partial class MainWindow : Window
 		BotAccountInput.Text          = c.BotAccountName;
 		AutoConnectCheck.IsChecked    = c.TwAutoConnect;
 		UpdateBotAuthStatus();
-		OnlyLiveCheck.IsChecked = c.OnlyWorkWhenLive;
 		AnnounceInChatCheck.IsChecked = c.AnnounceInChat;
 
 		// Spotify
@@ -379,7 +378,6 @@ if (int.TryParse(VoteSkipCountInput.Text,    out int vs))  c.VoteSkipCount      
 		c.UseBotAccount       = UseBotAccountCheck.IsChecked    == true;
 		if (c.UseBotAccount != botWasEnabled) _ = TwitchService.Instance.ApplyBotToggleAsync();
 		c.TwAutoConnect       = AutoConnectCheck.IsChecked      == true;
-		c.OnlyWorkWhenLive    = OnlyLiveCheck.IsChecked         == true;
 		c.AnnounceInChat      = AnnounceInChatCheck.IsChecked   == true;
 		c.AddSrToPlaylist     = AddToPlaylistCheck.IsChecked    == true;
 		c.LimitSrToPlaylist   = LimitToPlaylistCheck.IsChecked  == true;
@@ -389,6 +387,7 @@ if (int.TryParse(VoteSkipCountInput.Text,    out int vs))  c.VoteSkipCount      
 		c.StartWithWindows    = StartWithWindowsCheck.IsChecked == true;
 		c.MinimizeToTray      = MinimizeToTrayCheck.IsChecked   == true;
 		AppConfig.Save();
+		ApplyStartWithWindows(c.StartWithWindows);
 		UpdateSrStatus();
 		UpdateBotStatusBar();
 	}
@@ -442,6 +441,35 @@ if (int.TryParse(VoteSkipCountInput.Text,    out int vs))  c.VoteSkipCount      
 		base.OnStateChanged(e);
 		MaxBtn.Content = WindowState == WindowState.Maximized ? "❐" : "□";
 		OuterBorder.Padding = WindowState == WindowState.Maximized ? new Thickness(7) : new Thickness(0);
+		if (WindowState == WindowState.Minimized && AppConfig.Instance.MinimizeToTray) {
+			Hide();
+			_trayIcon!.Visible = true;
+		}
+	}
+
+	private static void ApplyStartWithWindows(bool enable) {
+		const string runKey  = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
+		const string appName = "Vibes";
+		try {
+			using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(runKey, true)
+				?? Microsoft.Win32.Registry.CurrentUser.CreateSubKey(runKey);
+			if (enable) {
+				var exe = Environment.ProcessPath ?? "";
+				if (string.IsNullOrEmpty(exe) ||
+				    Path.GetFileNameWithoutExtension(exe).Equals("dotnet", StringComparison.OrdinalIgnoreCase))
+					exe = Path.Combine(AppContext.BaseDirectory, "Vibes.exe");
+				if (File.Exists(exe))
+					key.SetValue(appName, $"\"{exe}\"");
+				else
+					AppLogger.Instance.Warning($"Start with Windows: exe not found at {exe}");
+			}
+			else {
+				key.DeleteValue(appName, throwOnMissingValue: false);
+			}
+		}
+		catch (Exception ex) {
+			AppLogger.Instance.Warning($"Start with Windows failed: {ex.Message}");
+		}
 	}
 
 	// -- Tray ------------------------------------------------------------------

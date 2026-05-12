@@ -11,7 +11,6 @@ public class AppConfig
 	public string BotAccountName { get; set; } = "";
 	public bool UseBotAccount { get; set; } = false;
 	public bool TwAutoConnect { get; set; } = true;
-	public bool OnlyWorkWhenLive { get; set; } = false;
 	public bool AnnounceInChat { get; set; } = true;
 
 	// -- SPOTIFY ---------------------------------------------------------------

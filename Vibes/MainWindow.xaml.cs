@@ -182,6 +182,7 @@ public partial class MainWindow : Window
 		RespToggleSrInput.Text     = c.BotRespToggleSr;
 
 		_configReady = true;
+		UpdateAllResponsePreviews();
 	}
 
 	private void BuildCommandRows() {
@@ -297,6 +298,78 @@ if (int.TryParse(VoteSkipCountInput.Text,    out int vs))  c.VoteSkipCount      
 
 		AppConfig.Save();
 	}
+
+	private void Resp_Changed(object sender, TextChangedEventArgs e) {
+		Cfg_Changed(sender, e);
+		if (sender is TextBox tb) UpdateResponsePreview(tb);
+	}
+
+	private void ResetResponse_Click(object sender, RoutedEventArgs e) {
+		if (sender is not Button btn || btn.Tag is not string tbName) return;
+		if (FindName(tbName) is not TextBox tb) return;
+		var defaults = new AppConfig();
+		tb.Text = tbName switch {
+			"RespSuccessInput"      => defaults.BotRespSuccess,
+			"RespErrorInput"        => defaults.BotRespError,
+			"RespNoSongInput"       => defaults.BotRespNoSong,
+			"RespBlacklistInput"    => defaults.BotRespBlacklist,
+			"RespExplicitInput"     => defaults.BotRespExplicit,
+			"RespTooLongInput"      => defaults.BotRespTooLong,
+			"RespCooldownInput"     => defaults.BotRespCooldown,
+			"RespUserCooldownInput" => defaults.BotRespUserCooldown,
+			"RespMaxReqInput"       => defaults.BotRespMaxReq,
+			"RespQueueFullInput"    => defaults.BotRespQueueFull,
+			"RespIsInQueueInput"    => defaults.BotRespIsInQueue,
+			"RespLevelTooLowInput"  => defaults.BotRespLevelTooLow,
+			"RespSongInput"         => defaults.BotRespSong,
+			"RespNextInput"         => defaults.BotRespNext,
+			"RespPosInput"          => defaults.BotRespPos,
+			"RespQueueInput"        => defaults.BotRespQueue,
+			"RespRemoveInput"       => defaults.BotRespRemove,
+			"RespNoQueueInput"      => defaults.BotRespNoQueue,
+			"RespSkipInput"         => defaults.BotRespSkip,
+			"RespVoteSkipInput"     => defaults.BotRespVoteSkip,
+			"RespSongLikeInput"     => defaults.BotRespSongLike,
+			"RespToggleSrInput"     => defaults.BotRespToggleSr,
+			_                       => tb.Text,
+		};
+	}
+
+	private void UpdateResponsePreview(TextBox tb) {
+		var previewName = tb.Name.Replace("Input", "Preview");
+		if (FindName(previewName) is not TextBlock preview) return;
+		preview.Text = FormatPreview(tb.Text);
+	}
+
+	private void UpdateAllResponsePreviews() {
+		foreach (string name in new[] {
+			"RespSuccessInput", "RespErrorInput", "RespNoSongInput", "RespBlacklistInput",
+			"RespExplicitInput", "RespTooLongInput", "RespCooldownInput", "RespUserCooldownInput",
+			"RespMaxReqInput", "RespQueueFullInput", "RespIsInQueueInput", "RespLevelTooLowInput",
+			"RespSongInput", "RespNextInput", "RespPosInput", "RespQueueInput",
+			"RespRemoveInput", "RespNoQueueInput", "RespSkipInput", "RespVoteSkipInput",
+			"RespSongLikeInput", "RespToggleSrInput",
+		}) {
+			if (FindName(name) is TextBox tb) UpdateResponsePreview(tb);
+		}
+	}
+
+	private static string FormatPreview(string template) =>
+		template
+			.Replace("{user}",      "Viewer123")
+			.Replace("{artist}",    "Daft Punk")
+			.Replace("{title}",     "Get Lucky")
+			.Replace("{song}",      "Daft Punk - Get Lucky")
+			.Replace("{requester}", ", requested by @Viewer123")
+			.Replace("{queue}",     "#1 Daft Punk - Get Lucky | #2 Avicii - Levels")
+			.Replace("{state}",     "enabled")
+			.Replace("{level}",     "Subscriber")
+			.Replace("{pos}",       "3")
+			.Replace("{ttp}",       "7")
+			.Replace("{cd}",        "30")
+			.Replace("{max}",       "5")
+			.Replace("{votes}",     "2")
+			.Replace("{needed}",    "5");
 
 	private void Cfg_CheckChanged(object sender, RoutedEventArgs e) {
 		if (!_configReady) return;

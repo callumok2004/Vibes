@@ -79,7 +79,7 @@ public class AppConfig
 	public string BotRespQueueFull { get; set; } = "@{user} The queue is full ({max} songs).";
 	public string BotRespIsInQueue { get; set; } = "@{user} That song is already in the queue.";
 	public string BotRespLevelTooLow { get; set; } = "@{user} You need to be at least {level} to request songs.";
-	public string BotRespSong { get; set; } = "Now playing: {artist} - {title}";
+	public string BotRespSong { get; set; } = "Now playing: {artist} - {title}{requester}";
 	public string BotRespNext { get; set; } = "Up next: {artist} - {title} (requested by @{user})";
 	public string BotRespPos { get; set; } = "@{user} Your song is at position #{pos} (~{ttp} min).";
 	public string BotRespQueue { get; set; } = "Queue: {queue}";

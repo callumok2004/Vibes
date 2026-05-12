@@ -71,7 +71,9 @@ public class SongRequestProcessor
 			case CommandType.Song: {
 				var track = SpotifyService.Instance.CurrentTrack;
 				if (track == null) { await ReplyAsync("Nothing is playing right now."); return; }
-				await ReplyAsync(Format(cfg.BotRespSong, artist: track.Artist, title: track.Title));
+				var req = SongQueue.Pending.FirstOrDefault(r => r.TrackId == track.TrackId);
+				var requester = req != null ? $", requested by @{req.Requester}" : "";
+				await ReplyAsync(Format(cfg.BotRespSong, artist: track.Artist, title: track.Title, requester: requester));
 				break;
 			}
 			case CommandType.Next: {
@@ -362,21 +364,22 @@ public class SongRequestProcessor
 
 	private static string Format(string template,
 		string user = "", string artist = "", string title = "", string queue = "",
-		string state = "", string level = "",
+		string state = "", string level = "", string requester = "",
 		int pos = 0, int cd = 0, int max = 0, int ttp = 0, int votes = 0, int needed = 0) {
 		return template
-			.Replace("{user}",   user)
-			.Replace("{artist}", artist)
-			.Replace("{title}",  title)
-			.Replace("{song}",   string.IsNullOrEmpty(artist) ? title : $"{artist} - {title}")
-			.Replace("{queue}",  queue)
-			.Replace("{state}",  state)
-			.Replace("{level}",  level)
-			.Replace("{pos}",    pos.ToString())
-			.Replace("{cd}",     cd.ToString())
-			.Replace("{max}",    max.ToString())
-			.Replace("{ttp}",    ttp.ToString())
-			.Replace("{votes}",  votes.ToString())
-			.Replace("{needed}", needed.ToString());
+			.Replace("{user}",      user)
+			.Replace("{artist}",    artist)
+			.Replace("{title}",     title)
+			.Replace("{song}",      string.IsNullOrEmpty(artist) ? title : $"{artist} - {title}")
+			.Replace("{queue}",     queue)
+			.Replace("{state}",     state)
+			.Replace("{level}",     level)
+			.Replace("{requester}", requester)
+			.Replace("{pos}",       pos.ToString())
+			.Replace("{cd}",        cd.ToString())
+			.Replace("{max}",       max.ToString())
+			.Replace("{ttp}",       ttp.ToString())
+			.Replace("{votes}",     votes.ToString())
+			.Replace("{needed}",    needed.ToString());
 	}
 }

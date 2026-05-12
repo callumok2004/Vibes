@@ -911,72 +911,160 @@
 							<!-- BOT RESPONSES -->
 							<StackPanel x:Name="CatResponses" Visibility="Collapsed">
 								<TextBlock Margin="0,0,0,6" FontFamily="Segoe UI" FontSize="11" FontWeight="Bold" Foreground="#ADADB8" Text="BOT RESPONSES" />
-								<TextBlock Margin="0,0,0,10" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" Text="Placeholders: {user} {artist} {title} {song} {pos} {ttp} {cd} {max} {level} {votes} {needed} {state}" TextWrapping="Wrap" />
+								<TextBlock Margin="0,0,0,10" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" Text="Placeholders: {user} {artist} {title} {song} {requester} {pos} {ttp} {cd} {max} {level} {votes} {needed} {state}" TextWrapping="Wrap" />
 								<Border Margin="0,0,0,2" Padding="18,10" Background="#0E0E10" CornerRadius="4" Tag="success added queue response">
-									<StackPanel><TextBlock FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="Song added successfully" /><TextBox x:Name="RespSuccessInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Cfg_Changed" /></StackPanel>
+									<StackPanel>
+										<Grid><TextBlock VerticalAlignment="Center" FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="Song added successfully" /><Button HorizontalAlignment="Right" VerticalAlignment="Center" Content="Reset" Tag="RespSuccessInput" Click="ResetResponse_Click" Style="{StaticResource ActionBtn}" Padding="8,2" FontSize="11" /></Grid>
+										<TextBox x:Name="RespSuccessInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Resp_Changed" />
+										<TextBlock x:Name="RespSuccessPreview" Margin="0,4,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" TextWrapping="Wrap" />
+									</StackPanel>
 								</Border>
 								<Border Margin="0,0,0,2" Padding="18,10" Background="#0E0E10" CornerRadius="4" Tag="error adding song response">
-									<StackPanel><TextBlock FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="Error adding song" /><TextBox x:Name="RespErrorInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Cfg_Changed" /></StackPanel>
+									<StackPanel>
+										<Grid><TextBlock VerticalAlignment="Center" FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="Error adding song" /><Button HorizontalAlignment="Right" VerticalAlignment="Center" Content="Reset" Tag="RespErrorInput" Click="ResetResponse_Click" Style="{StaticResource ActionBtn}" Padding="8,2" FontSize="11" /></Grid>
+										<TextBox x:Name="RespErrorInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Resp_Changed" />
+										<TextBlock x:Name="RespErrorPreview" Margin="0,4,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" TextWrapping="Wrap" />
+									</StackPanel>
 								</Border>
 								<Border Margin="0,0,0,2" Padding="18,10" Background="#0E0E10" CornerRadius="4" Tag="no song found response">
-									<StackPanel><TextBlock FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="No song found" /><TextBox x:Name="RespNoSongInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Cfg_Changed" /></StackPanel>
+									<StackPanel>
+										<Grid><TextBlock VerticalAlignment="Center" FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="No song found" /><Button HorizontalAlignment="Right" VerticalAlignment="Center" Content="Reset" Tag="RespNoSongInput" Click="ResetResponse_Click" Style="{StaticResource ActionBtn}" Padding="8,2" FontSize="11" /></Grid>
+										<TextBox x:Name="RespNoSongInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Resp_Changed" />
+										<TextBlock x:Name="RespNoSongPreview" Margin="0,4,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" TextWrapping="Wrap" />
+									</StackPanel>
 								</Border>
 								<Border Margin="0,0,0,2" Padding="18,10" Background="#0E0E10" CornerRadius="4" Tag="blocked artist song blacklist response">
-									<StackPanel><TextBlock FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="Song/artist blocked" /><TextBox x:Name="RespBlacklistInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Cfg_Changed" /></StackPanel>
+									<StackPanel>
+										<Grid><TextBlock VerticalAlignment="Center" FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="Song/artist blocked" /><Button HorizontalAlignment="Right" VerticalAlignment="Center" Content="Reset" Tag="RespBlacklistInput" Click="ResetResponse_Click" Style="{StaticResource ActionBtn}" Padding="8,2" FontSize="11" /></Grid>
+										<TextBox x:Name="RespBlacklistInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Resp_Changed" />
+										<TextBlock x:Name="RespBlacklistPreview" Margin="0,4,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" TextWrapping="Wrap" />
+									</StackPanel>
 								</Border>
 								<Border Margin="0,0,0,2" Padding="18,10" Background="#0E0E10" CornerRadius="4" Tag="explicit song response">
-									<StackPanel><TextBlock FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="Song is explicit" /><TextBox x:Name="RespExplicitInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Cfg_Changed" /></StackPanel>
+									<StackPanel>
+										<Grid><TextBlock VerticalAlignment="Center" FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="Song is explicit" /><Button HorizontalAlignment="Right" VerticalAlignment="Center" Content="Reset" Tag="RespExplicitInput" Click="ResetResponse_Click" Style="{StaticResource ActionBtn}" Padding="8,2" FontSize="11" /></Grid>
+										<TextBox x:Name="RespExplicitInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Resp_Changed" />
+										<TextBlock x:Name="RespExplicitPreview" Margin="0,4,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" TextWrapping="Wrap" />
+									</StackPanel>
 								</Border>
 								<Border Margin="0,0,0,2" Padding="18,10" Background="#0E0E10" CornerRadius="4" Tag="song too long response">
-									<StackPanel><TextBlock FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="Song too long" /><TextBox x:Name="RespTooLongInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Cfg_Changed" /></StackPanel>
+									<StackPanel>
+										<Grid><TextBlock VerticalAlignment="Center" FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="Song too long" /><Button HorizontalAlignment="Right" VerticalAlignment="Center" Content="Reset" Tag="RespTooLongInput" Click="ResetResponse_Click" Style="{StaticResource ActionBtn}" Padding="8,2" FontSize="11" /></Grid>
+										<TextBox x:Name="RespTooLongInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Resp_Changed" />
+										<TextBlock x:Name="RespTooLongPreview" Margin="0,4,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" TextWrapping="Wrap" />
+									</StackPanel>
 								</Border>
 								<Border Margin="0,0,0,2" Padding="18,10" Background="#0E0E10" CornerRadius="4" Tag="cooldown global response">
-									<StackPanel><TextBlock FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="Global cooldown active" /><TextBox x:Name="RespCooldownInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Cfg_Changed" /></StackPanel>
+									<StackPanel>
+										<Grid><TextBlock VerticalAlignment="Center" FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="Global cooldown active" /><Button HorizontalAlignment="Right" VerticalAlignment="Center" Content="Reset" Tag="RespCooldownInput" Click="ResetResponse_Click" Style="{StaticResource ActionBtn}" Padding="8,2" FontSize="11" /></Grid>
+										<TextBox x:Name="RespCooldownInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Resp_Changed" />
+										<TextBlock x:Name="RespCooldownPreview" Margin="0,4,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" TextWrapping="Wrap" />
+									</StackPanel>
 								</Border>
 								<Border Margin="0,0,0,2" Padding="18,10" Background="#0E0E10" CornerRadius="4" Tag="per user cooldown response">
-									<StackPanel><TextBlock FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="Per-user cooldown active" /><TextBox x:Name="RespUserCooldownInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Cfg_Changed" /></StackPanel>
+									<StackPanel>
+										<Grid><TextBlock VerticalAlignment="Center" FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="Per-user cooldown active" /><Button HorizontalAlignment="Right" VerticalAlignment="Center" Content="Reset" Tag="RespUserCooldownInput" Click="ResetResponse_Click" Style="{StaticResource ActionBtn}" Padding="8,2" FontSize="11" /></Grid>
+										<TextBox x:Name="RespUserCooldownInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Resp_Changed" />
+										<TextBlock x:Name="RespUserCooldownPreview" Margin="0,4,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" TextWrapping="Wrap" />
+									</StackPanel>
 								</Border>
 								<Border Margin="0,0,0,2" Padding="18,10" Background="#0E0E10" CornerRadius="4" Tag="max requests user hit response">
-									<StackPanel><TextBlock FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="User hit max requests" /><TextBox x:Name="RespMaxReqInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Cfg_Changed" /></StackPanel>
+									<StackPanel>
+										<Grid><TextBlock VerticalAlignment="Center" FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="User hit max requests" /><Button HorizontalAlignment="Right" VerticalAlignment="Center" Content="Reset" Tag="RespMaxReqInput" Click="ResetResponse_Click" Style="{StaticResource ActionBtn}" Padding="8,2" FontSize="11" /></Grid>
+										<TextBox x:Name="RespMaxReqInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Resp_Changed" />
+										<TextBlock x:Name="RespMaxReqPreview" Margin="0,4,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" TextWrapping="Wrap" />
+									</StackPanel>
 								</Border>
 								<Border Margin="0,0,0,2" Padding="18,10" Background="#0E0E10" CornerRadius="4" Tag="queue full response">
-									<StackPanel><TextBlock FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="Queue is full" /><TextBox x:Name="RespQueueFullInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Cfg_Changed" /></StackPanel>
+									<StackPanel>
+										<Grid><TextBlock VerticalAlignment="Center" FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="Queue is full" /><Button HorizontalAlignment="Right" VerticalAlignment="Center" Content="Reset" Tag="RespQueueFullInput" Click="ResetResponse_Click" Style="{StaticResource ActionBtn}" Padding="8,2" FontSize="11" /></Grid>
+										<TextBox x:Name="RespQueueFullInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Resp_Changed" />
+										<TextBlock x:Name="RespQueueFullPreview" Margin="0,4,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" TextWrapping="Wrap" />
+									</StackPanel>
 								</Border>
 								<Border Margin="0,0,0,2" Padding="18,10" Background="#0E0E10" CornerRadius="4" Tag="already in queue duplicate response">
-									<StackPanel><TextBlock FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="Song already in queue" /><TextBox x:Name="RespIsInQueueInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Cfg_Changed" /></StackPanel>
+									<StackPanel>
+										<Grid><TextBlock VerticalAlignment="Center" FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="Song already in queue" /><Button HorizontalAlignment="Right" VerticalAlignment="Center" Content="Reset" Tag="RespIsInQueueInput" Click="ResetResponse_Click" Style="{StaticResource ActionBtn}" Padding="8,2" FontSize="11" /></Grid>
+										<TextBox x:Name="RespIsInQueueInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Resp_Changed" />
+										<TextBlock x:Name="RespIsInQueuePreview" Margin="0,4,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" TextWrapping="Wrap" />
+									</StackPanel>
 								</Border>
 								<Border Margin="0,0,0,2" Padding="18,10" Background="#0E0E10" CornerRadius="4" Tag="level too low user level response">
-									<StackPanel><TextBlock FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="User level too low" /><TextBox x:Name="RespLevelTooLowInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Cfg_Changed" /></StackPanel>
+									<StackPanel>
+										<Grid><TextBlock VerticalAlignment="Center" FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="User level too low" /><Button HorizontalAlignment="Right" VerticalAlignment="Center" Content="Reset" Tag="RespLevelTooLowInput" Click="ResetResponse_Click" Style="{StaticResource ActionBtn}" Padding="8,2" FontSize="11" /></Grid>
+										<TextBox x:Name="RespLevelTooLowInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Resp_Changed" />
+										<TextBlock x:Name="RespLevelTooLowPreview" Margin="0,4,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" TextWrapping="Wrap" />
+									</StackPanel>
 								</Border>
 								<Border Margin="0,0,0,2" Padding="18,10" Background="#0E0E10" CornerRadius="4" Tag="song now playing response">
-									<StackPanel><TextBlock FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="!song - now playing" /><TextBox x:Name="RespSongInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Cfg_Changed" /></StackPanel>
+									<StackPanel>
+										<Grid><TextBlock VerticalAlignment="Center" FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="!song - now playing" /><Button HorizontalAlignment="Right" VerticalAlignment="Center" Content="Reset" Tag="RespSongInput" Click="ResetResponse_Click" Style="{StaticResource ActionBtn}" Padding="8,2" FontSize="11" /></Grid>
+										<TextBox x:Name="RespSongInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Resp_Changed" />
+										<TextBlock x:Name="RespSongPreview" Margin="0,4,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" TextWrapping="Wrap" />
+									</StackPanel>
 								</Border>
 								<Border Margin="0,0,0,2" Padding="18,10" Background="#0E0E10" CornerRadius="4" Tag="next song up next response">
-									<StackPanel><TextBlock FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="!next - next song" /><TextBox x:Name="RespNextInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Cfg_Changed" /></StackPanel>
+									<StackPanel>
+										<Grid><TextBlock VerticalAlignment="Center" FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="!next - next song" /><Button HorizontalAlignment="Right" VerticalAlignment="Center" Content="Reset" Tag="RespNextInput" Click="ResetResponse_Click" Style="{StaticResource ActionBtn}" Padding="8,2" FontSize="11" /></Grid>
+										<TextBox x:Name="RespNextInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Resp_Changed" />
+										<TextBlock x:Name="RespNextPreview" Margin="0,4,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" TextWrapping="Wrap" />
+									</StackPanel>
 								</Border>
 								<Border Margin="0,0,0,2" Padding="18,10" Background="#0E0E10" CornerRadius="4" Tag="position queue pos response">
-									<StackPanel><TextBlock FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="!pos - queue position" /><TextBox x:Name="RespPosInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Cfg_Changed" /></StackPanel>
+									<StackPanel>
+										<Grid><TextBlock VerticalAlignment="Center" FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="!pos - queue position" /><Button HorizontalAlignment="Right" VerticalAlignment="Center" Content="Reset" Tag="RespPosInput" Click="ResetResponse_Click" Style="{StaticResource ActionBtn}" Padding="8,2" FontSize="11" /></Grid>
+										<TextBox x:Name="RespPosInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Resp_Changed" />
+										<TextBlock x:Name="RespPosPreview" Margin="0,4,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" TextWrapping="Wrap" />
+									</StackPanel>
 								</Border>
 								<Border Margin="0,0,0,2" Padding="18,10" Background="#0E0E10" CornerRadius="4" Tag="queue list response">
-									<StackPanel><TextBlock FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="!queue - queue list" /><TextBox x:Name="RespQueueInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Cfg_Changed" /></StackPanel>
+									<StackPanel>
+										<Grid><TextBlock VerticalAlignment="Center" FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="!queue - queue list" /><Button HorizontalAlignment="Right" VerticalAlignment="Center" Content="Reset" Tag="RespQueueInput" Click="ResetResponse_Click" Style="{StaticResource ActionBtn}" Padding="8,2" FontSize="11" /></Grid>
+										<TextBox x:Name="RespQueueInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Resp_Changed" />
+										<TextBlock x:Name="RespQueuePreview" Margin="0,4,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" TextWrapping="Wrap" />
+									</StackPanel>
 								</Border>
 								<Border Margin="0,0,0,2" Padding="18,10" Background="#0E0E10" CornerRadius="4" Tag="remove song response">
-									<StackPanel><TextBlock FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="!remove - song removed" /><TextBox x:Name="RespRemoveInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Cfg_Changed" /></StackPanel>
+									<StackPanel>
+										<Grid><TextBlock VerticalAlignment="Center" FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="!remove - song removed" /><Button HorizontalAlignment="Right" VerticalAlignment="Center" Content="Reset" Tag="RespRemoveInput" Click="ResetResponse_Click" Style="{StaticResource ActionBtn}" Padding="8,2" FontSize="11" /></Grid>
+										<TextBox x:Name="RespRemoveInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Resp_Changed" />
+										<TextBlock x:Name="RespRemovePreview" Margin="0,4,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" TextWrapping="Wrap" />
+									</StackPanel>
 								</Border>
 								<Border Margin="0,0,0,2" Padding="18,10" Background="#0E0E10" CornerRadius="4" Tag="queue empty response">
-									<StackPanel><TextBlock FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="Queue is empty" /><TextBox x:Name="RespNoQueueInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Cfg_Changed" /></StackPanel>
+									<StackPanel>
+										<Grid><TextBlock VerticalAlignment="Center" FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="Queue is empty" /><Button HorizontalAlignment="Right" VerticalAlignment="Center" Content="Reset" Tag="RespNoQueueInput" Click="ResetResponse_Click" Style="{StaticResource ActionBtn}" Padding="8,2" FontSize="11" /></Grid>
+										<TextBox x:Name="RespNoQueueInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Resp_Changed" />
+										<TextBlock x:Name="RespNoQueuePreview" Margin="0,4,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" TextWrapping="Wrap" />
+									</StackPanel>
 								</Border>
 								<Border Margin="0,0,0,2" Padding="18,10" Background="#0E0E10" CornerRadius="4" Tag="skip skipped response">
-									<StackPanel><TextBlock FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="Song skipped" /><TextBox x:Name="RespSkipInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Cfg_Changed" /></StackPanel>
+									<StackPanel>
+										<Grid><TextBlock VerticalAlignment="Center" FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="Song skipped" /><Button HorizontalAlignment="Right" VerticalAlignment="Center" Content="Reset" Tag="RespSkipInput" Click="ResetResponse_Click" Style="{StaticResource ActionBtn}" Padding="8,2" FontSize="11" /></Grid>
+										<TextBox x:Name="RespSkipInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Resp_Changed" />
+										<TextBlock x:Name="RespSkipPreview" Margin="0,4,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" TextWrapping="Wrap" />
+									</StackPanel>
 								</Border>
 								<Border Margin="0,0,0,2" Padding="18,10" Background="#0E0E10" CornerRadius="4" Tag="vote skip cast response">
-									<StackPanel><TextBlock FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="Vote skip cast" /><TextBox x:Name="RespVoteSkipInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Cfg_Changed" /></StackPanel>
+									<StackPanel>
+										<Grid><TextBlock VerticalAlignment="Center" FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="Vote skip cast" /><Button HorizontalAlignment="Right" VerticalAlignment="Center" Content="Reset" Tag="RespVoteSkipInput" Click="ResetResponse_Click" Style="{StaticResource ActionBtn}" Padding="8,2" FontSize="11" /></Grid>
+										<TextBox x:Name="RespVoteSkipInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Resp_Changed" />
+										<TextBlock x:Name="RespVoteSkipPreview" Margin="0,4,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" TextWrapping="Wrap" />
+									</StackPanel>
 								</Border>
 								<Border Margin="0,0,0,2" Padding="18,10" Background="#0E0E10" CornerRadius="4" Tag="song liked heart response">
-									<StackPanel><TextBlock FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="Song liked" /><TextBox x:Name="RespSongLikeInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Cfg_Changed" /></StackPanel>
+									<StackPanel>
+										<Grid><TextBlock VerticalAlignment="Center" FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="Song liked" /><Button HorizontalAlignment="Right" VerticalAlignment="Center" Content="Reset" Tag="RespSongLikeInput" Click="ResetResponse_Click" Style="{StaticResource ActionBtn}" Padding="8,2" FontSize="11" /></Grid>
+										<TextBox x:Name="RespSongLikeInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Resp_Changed" />
+										<TextBlock x:Name="RespSongLikePreview" Margin="0,4,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" TextWrapping="Wrap" />
+									</StackPanel>
 								</Border>
 								<Border Margin="0,0,0,2" Padding="18,10" Background="#0E0E10" CornerRadius="4" Tag="toggle sr on off response">
-									<StackPanel><TextBlock FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="SR toggled on/off" /><TextBox x:Name="RespToggleSrInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Cfg_Changed" /></StackPanel>
+									<StackPanel>
+										<Grid><TextBlock VerticalAlignment="Center" FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="SR toggled on/off" /><Button HorizontalAlignment="Right" VerticalAlignment="Center" Content="Reset" Tag="RespToggleSrInput" Click="ResetResponse_Click" Style="{StaticResource ActionBtn}" Padding="8,2" FontSize="11" /></Grid>
+										<TextBox x:Name="RespToggleSrInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Resp_Changed" />
+										<TextBlock x:Name="RespToggleSrPreview" Margin="0,4,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" TextWrapping="Wrap" />
+									</StackPanel>
 								</Border>
 							</StackPanel>
 

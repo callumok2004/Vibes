@@ -261,14 +261,31 @@ public class TwitchService
 				}
 			}
 		}
-		catch (OperationCanceledException) { }
+		catch (OperationCanceledException) { return; }
 		catch (Exception ex) {
 			AppLogger.Instance.Error($"Twitch read error: {ex.Message}");
 		}
+
 		IsConnected = false;
 		_botCts?.Cancel();
-		StatusChanged?.Invoke("Disconnected");
-		AppLogger.Instance.Warning("Twitch IRC disconnected");
+
+		if (ct.IsCancellationRequested) {
+			StatusChanged?.Invoke("Disconnected");
+			return;
+		}
+
+		AppLogger.Instance.Warning("Twitch IRC disconnected - reconnecting in 3s");
+		StatusChanged?.Invoke("Reconnecting…");
+
+		try {
+			await Task.Delay(3000, ct);
+			await ConnectAsync();
+		}
+		catch (OperationCanceledException) { }
+		catch (Exception ex) {
+			AppLogger.Instance.Error($"Reconnect failed: {ex.Message}");
+			StatusChanged?.Invoke("Disconnected");
+		}
 	}
 
 	// Keep the bot connection alive with PING responses
@@ -284,8 +301,22 @@ public class TwitchService
 				}
 			}
 		}
+		catch (OperationCanceledException) { return; }
+		catch (Exception ex) {
+			AppLogger.Instance.Warning($"Twitch bot connection error: {ex.Message}");
+		}
+
+		if (ct.IsCancellationRequested) return;
+
+		AppLogger.Instance.Warning("Twitch bot disconnected - reconnecting in 3s");
+		try {
+			await Task.Delay(3000, ct);
+			await ConnectBotAsync();
+		}
 		catch (OperationCanceledException) { }
-		catch { }
+		catch (Exception ex) {
+			AppLogger.Instance.Error($"Bot reconnect failed: {ex.Message}");
+		}
 	}
 
 	// -- Line parsing ----------------------------------------------------------

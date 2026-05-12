@@ -45,6 +45,7 @@ public partial class MainWindow : Window
 
 		TitleVersionText.Text = $"v{VersionInfo.CurrentVersion}";
 		VersionInfoText.Text = $"Version {VersionInfo.CurrentVersion}";
+		_ = CheckForUpdatesSilentAsync();
 
 		InitConfigControls();
 		BuildCommandRows();
@@ -797,6 +798,29 @@ if (int.TryParse(VoteSkipCountInput.Text,    out int vs))  c.VoteSkipCount      
 	}
 
 	// -- Version check ---------------------------------------------------------
+
+	private async Task CheckForUpdatesSilentAsync() {
+		try {
+			var (updateAvailable, latest, _) = await VersionInfo.CheckForUpdateAsync();
+			if (!updateAvailable) return;
+			Dispatcher.Invoke(() => {
+				UpdateNoticeText.Text       = $"Update available: {latest}";
+				UpdateNoticeText.Visibility = Visibility.Visible;
+			});
+		}
+		catch { }
+	}
+
+	private async void UpdateNotice_Click(object sender, System.Windows.Input.MouseButtonEventArgs e) {
+		try {
+			var (updateAvailable, latest, url) = await VersionInfo.CheckForUpdateAsync();
+			if (!updateAvailable || url == null) return;
+			var result = MessageBox.Show($"New version available: {latest}\n\nOpen release page?", "Update Available", MessageBoxButton.YesNo, MessageBoxImage.Information);
+			if (result == MessageBoxResult.Yes)
+				System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true });
+		}
+		catch { }
+	}
 
 	private async void CheckForUpdates_Click(object sender, RoutedEventArgs e) {
 		UpdateStatusText.Text = "Checking...";

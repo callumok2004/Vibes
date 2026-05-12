@@ -17,6 +17,9 @@ public class Credentials
 	public string TwitchBotRefreshToken { get; set; } = "";
 	public DateTime TwitchBotTokenExpiry { get; set; }
 
+	public string CloudflareApiToken      { get; set; } = "";
+	public string CloudflareKvNamespaceId { get; set; } = "";
+
 	public string SpotifyAccessToken { get; set; } = "";
 	public string SpotifyRefreshToken { get; set; } = "";
 	public string SpotifyDeviceId { get; set; } = "";

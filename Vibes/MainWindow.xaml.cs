@@ -53,6 +53,8 @@ public partial class MainWindow : Window
 
 		SpotifyService.Instance.TrackChanged  += OnTrackChanged;
 		SpotifyService.Instance.QueueChanged  += OnQueueChanged;
+		SpotifyService.Instance.TrackChanged  += _ => CloudflareService.Instance.SchedulePush();
+		SpotifyService.Instance.QueueChanged  += _ => CloudflareService.Instance.SchedulePush();
 		SpotifyService.Instance.StatusChanged += s => Dispatcher.Invoke(() => UpdateSpotifyStatus(s));
 
 		TwitchService.Instance.StatusChanged  += s => Dispatcher.Invoke(() => { UpdateTwitchStatus(s); UpdateBotStatusBar(); });
@@ -157,6 +159,14 @@ public partial class MainWindow : Window
 		StartWithWindowsCheck.IsChecked = c.StartWithWindows;
 		MinimizeToTrayCheck.IsChecked   = c.MinimizeToTray;
 
+		// Queue page
+		CfAccountIdInput.Text    = c.CloudflareAccountId;
+		CfWorkerNameInput.Text   = c.CloudflareWorkerName;
+		CfEnabledCheck.IsChecked = c.CloudflareQueueEnabled;
+		CfApiTokenInput.Password = Credentials.Instance.CloudflareApiToken;
+		CfCustomUrlInput.Text    = c.CloudflareCustomUrl;
+		UpdateCfWorkerUrl();
+
 		// Responses
 		RespSuccessInput.Text      = c.BotRespSuccess;
 		RespErrorInput.Text        = c.BotRespError;
@@ -253,8 +263,11 @@ public partial class MainWindow : Window
 		c.BotAccountName       = BotAccountInput.Text.Trim();
 		c.SpotifyClientId      = SpotifyClientIdInput.Text.Trim();
 		c.SpotifyPlaylistId    = SpotifyPlaylistInput.Text.Trim();
-		c.TwSrCommandTrigger   = SrCommandInput.Text.Trim();
-		c.TwRewardId           = RewardIdInput.Text.Trim();
+		c.TwSrCommandTrigger      = SrCommandInput.Text.Trim();
+		c.TwRewardId              = RewardIdInput.Text.Trim();
+		c.CloudflareAccountId     = CfAccountIdInput.Text.Trim();
+		c.CloudflareWorkerName    = CfWorkerNameInput.Text.Trim();
+		c.CloudflareCustomUrl     = CfCustomUrlInput.Text.Trim();
 
 		if (int.TryParse(SpotifyFetchRateInput.Text,    out int fr))  c.SpotifyFetchRate      = Math.Max(1, fr);
 		if (int.TryParse(SpotifyCallbackPortInput.Text, out int cp))  c.SpotifyCallbackPort   = cp is >= 1024 and <= 65535 ? cp : 8888;
@@ -384,8 +397,9 @@ if (int.TryParse(VoteSkipCountInput.Text,    out int vs))  c.VoteSkipCount      
 		c.BlockAllExplicitSongs   = BlockExplicitCheck.IsChecked   == true;
 		c.AutoManageRedemptions   = AutoManageCheck.IsChecked      == true;
 
-		c.StartWithWindows    = StartWithWindowsCheck.IsChecked == true;
-		c.MinimizeToTray      = MinimizeToTrayCheck.IsChecked   == true;
+		c.StartWithWindows        = StartWithWindowsCheck.IsChecked == true;
+		c.MinimizeToTray          = MinimizeToTrayCheck.IsChecked   == true;
+		c.CloudflareQueueEnabled  = CfEnabledCheck.IsChecked        == true;
 		AppConfig.Save();
 		ApplyStartWithWindows(c.StartWithWindows);
 		UpdateSrStatus();
@@ -791,6 +805,7 @@ if (int.TryParse(VoteSkipCountInput.Text,    out int vs))  c.VoteSkipCount      
 		if (CatTwitch == null) return;
 		CatTwitch.Visibility    = NavTwitch.IsChecked    == true ? Visibility.Visible : Visibility.Collapsed;
 		CatSpotify.Visibility   = NavSpotify.IsChecked   == true ? Visibility.Visible : Visibility.Collapsed;
+		CatQueuePage.Visibility = NavQueuePage.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
 		CatRequests.Visibility  = NavRequests.IsChecked  == true ? Visibility.Visible : Visibility.Collapsed;
 		CatLimits.Visibility    = NavLimits.IsChecked    == true ? Visibility.Visible : Visibility.Collapsed;
 		CatResponses.Visibility = NavResponses.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
@@ -800,7 +815,7 @@ if (int.TryParse(VoteSkipCountInput.Text,    out int vs))  c.VoteSkipCount      
 
 	private void SettingsSearch_Changed(object sender, TextChangedEventArgs e) {
 		if (CatTwitch == null) return;
-		var cats = new[] { CatTwitch, CatSpotify, CatRequests, CatLimits, CatResponses, CatCommands, CatApp };
+		var cats = new[] { CatTwitch, CatSpotify, CatRequests, CatLimits, CatResponses, CatCommands, CatApp, CatQueuePage };
 		var q = SettingsSearch.Text.Trim();
 
 		// Always restore all row visibility first
@@ -823,6 +838,77 @@ if (int.TryParse(VoteSkipCountInput.Text,    out int vs))  c.VoteSkipCount      
 						? Visibility.Visible : Visibility.Collapsed;
 			}
 		}
+	}
+
+	// -- Cloudflare queue page -------------------------------------------------
+
+	private void Hyperlink_Navigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs e) {
+		System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true });
+		e.Handled = true;
+	}
+
+	private void CfToken_Changed(object sender, RoutedEventArgs e) {
+		if (!_configReady) return;
+		Credentials.Instance.CloudflareApiToken = CfApiTokenInput.Password;
+		Credentials.Save();
+	}
+
+	private void UpdateCfWorkerUrl() {
+		var cfg      = AppConfig.Instance;
+		var deployed = !string.IsNullOrEmpty(cfg.CloudflareWorkerUrl);
+		CfWorkerUrlText.Text         = deployed ? cfg.CloudflareWorkerUrl : "Not deployed";
+		CfOpenDashboardBtn.IsEnabled = deployed;
+		CfOpenQueueBtn.IsEnabled     = deployed;
+	}
+
+	private void CfOpenQueue_Click(object sender, RoutedEventArgs e) {
+		var url = AppConfig.Instance.CloudflareQueueUrl;
+		if (string.IsNullOrEmpty(url)) return;
+		System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true });
+	}
+
+	private async void CfDeploy_Click(object sender, RoutedEventArgs e) {
+		var accountId  = AppConfig.Instance.CloudflareAccountId.Trim();
+		var apiToken   = Credentials.Instance.CloudflareApiToken.Trim();
+		var workerName = AppConfig.Instance.CloudflareWorkerName.Trim();
+
+		if (string.IsNullOrEmpty(accountId) || string.IsNullOrEmpty(apiToken)) {
+			CfDeployStatusText.Text       = "Account ID and API Token are required.";
+			CfDeployStatusText.Foreground = new SolidColorBrush(Color.FromRgb(0xEB, 0x45, 0x34));
+			CfDeployStatusText.Visibility = Visibility.Visible;
+			return;
+		}
+
+		CfDeployBtn.IsEnabled         = false;
+		CfDeployStatusText.Text       = "Deploying…";
+		CfDeployStatusText.Foreground = new SolidColorBrush(Color.FromRgb(0x4A, 0x4A, 0x55));
+		CfDeployStatusText.Visibility = Visibility.Visible;
+
+		try {
+			var url = await CloudflareService.Instance.DeployAsync(accountId, apiToken, workerName);
+			AppConfig.Instance.CloudflareWorkerUrl = url;
+			AppConfig.Save();
+			UpdateCfWorkerUrl();
+			CfDeployStatusText.Text       = "Deployed successfully.";
+			CfDeployStatusText.Foreground = new SolidColorBrush(Color.FromRgb(0x1D, 0xB9, 0x54));
+		}
+		catch (Exception ex) {
+			AppLogger.Instance.Error($"Cloudflare deploy failed: {ex.Message}");
+			CfDeployStatusText.Text       = $"Deploy failed: {ex.Message}";
+			CfDeployStatusText.Foreground = new SolidColorBrush(Color.FromRgb(0xEB, 0x45, 0x34));
+		}
+		finally {
+			CfDeployBtn.IsEnabled = true;
+		}
+	}
+
+	private void CfOpenDashboard_Click(object sender, RoutedEventArgs e) {
+		var accountId  = AppConfig.Instance.CloudflareAccountId.Trim();
+		var workerName = AppConfig.Instance.CloudflareWorkerName.Trim();
+		var url = string.IsNullOrEmpty(accountId)
+			? "https://dash.cloudflare.com/?to=/:account/workers"
+			: $"https://dash.cloudflare.com/{accountId}/workers/services/view/{workerName}/production";
+		System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true });
 	}
 
 	// -- Version check ---------------------------------------------------------

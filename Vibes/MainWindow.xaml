@@ -386,6 +386,10 @@
 						<ControlTemplate.Triggers>
 							<Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bd" Property="Background" Value="#9146FF" /></Trigger>
 							<Trigger Property="IsPressed" Value="True"><Setter TargetName="Bd" Property="Background" Value="#4B2D8F" /></Trigger>
+							<Trigger Property="IsEnabled" Value="False">
+								<Setter TargetName="Bd" Property="Background" Value="#2D2D35" />
+								<Setter TargetName="Bd" Property="Opacity" Value="0.5" />
+							</Trigger>
 						</ControlTemplate.Triggers>
 					</ControlTemplate>
 				</Setter.Value>
@@ -604,6 +608,7 @@
 							<RadioButton x:Name="NavResponses" Content="Responses" GroupName="Nav" Style="{StaticResource NavBtn}" Checked="Nav_Checked" />
 							<RadioButton x:Name="NavCommands"  Content="Commands"  GroupName="Nav" Style="{StaticResource NavBtn}" Checked="Nav_Checked" />
 							<RadioButton x:Name="NavApp"       Content="App"       GroupName="Nav" Style="{StaticResource NavBtn}" Checked="Nav_Checked" />
+							<RadioButton x:Name="NavQueuePage" Content="Queue Page" GroupName="Nav" Style="{StaticResource NavBtn}" Checked="Nav_Checked" />
 						</StackPanel>
 					</Border>
 
@@ -1107,6 +1112,97 @@
 								</Border>
 							</StackPanel>
 
+							<!-- QUEUE PAGE -->
+							<StackPanel x:Name="CatQueuePage" Visibility="Collapsed">
+								<TextBlock Margin="0,0,0,4" FontFamily="Segoe UI" FontSize="11" FontWeight="Bold" Foreground="#F48024" Text="QUEUE PAGE" />
+								<TextBlock Margin="0,0,0,14" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" TextWrapping="Wrap" Text="Host a live queue page your viewers can open. Uses Cloudflare Workers (free). You deploy your own instance - Vibes never sees your data." />
+
+								<!-- Setup guide -->
+								<Border Margin="0,0,0,12" Padding="16,14" Background="#0E0E10" CornerRadius="4">
+									<StackPanel>
+										<TextBlock Margin="0,0,0,10" FontFamily="Segoe UI" FontSize="12" FontWeight="SemiBold" Foreground="#EFEFF1" Text="Setup Guide" />
+										<TextBlock FontFamily="Segoe UI" FontSize="11" Foreground="#ADADB8" TextWrapping="Wrap" xml:space="preserve"><Run FontWeight="SemiBold" Foreground="#F48024">1.</Run><Run> Create a free account at </Run><Hyperlink NavigateUri="https://cloudflare.com" RequestNavigate="Hyperlink_Navigate" Foreground="#F48024">cloudflare.com</Hyperlink></TextBlock>
+										<TextBlock Margin="0,6,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#ADADB8" TextWrapping="Wrap" xml:space="preserve"><Run FontWeight="SemiBold" Foreground="#F48024">2.</Run><Run> Go to </Run><Hyperlink NavigateUri="https://dash.cloudflare.com/profile/api-tokens" RequestNavigate="Hyperlink_Navigate" Foreground="#EFEFF1">My Profile → API Tokens → Create Token</Hyperlink></TextBlock>
+										<TextBlock Margin="0,6,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#ADADB8" TextWrapping="Wrap" xml:space="preserve"><Run FontWeight="SemiBold" Foreground="#F48024">3.</Run><Run> Select the </Run><Run FontWeight="SemiBold" Foreground="#EFEFF1">Edit Cloudflare Workers</Run><Run> template. This grants </Run><Run FontWeight="SemiBold" Foreground="#EFEFF1">Workers Scripts: Edit</Run><Run> and </Run><Run FontWeight="SemiBold" Foreground="#EFEFF1">Workers KV Storage: Edit</Run><Run> - both are required. Scope it to your account and click Continue to summary.</Run></TextBlock>
+										<TextBlock Margin="0,6,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#ADADB8" TextWrapping="Wrap" xml:space="preserve"><Run FontWeight="SemiBold" Foreground="#F48024">4.</Run><Run> Copy your </Run><Run FontWeight="SemiBold" Foreground="#EFEFF1">Account ID</Run><Run> from the </Run><Hyperlink NavigateUri="https://dash.cloudflare.com/?to=/:account/workers" RequestNavigate="Hyperlink_Navigate" Foreground="#EFEFF1">Workers dashboard</Hyperlink><Run> right sidebar</Run></TextBlock>
+										<TextBlock Margin="0,6,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#ADADB8" TextWrapping="Wrap" xml:space="preserve"><Run FontWeight="SemiBold" Foreground="#F48024">5.</Run><Run> Paste both below and click </Run><Run FontWeight="SemiBold" Foreground="#EFEFF1">Deploy</Run><Run> - Vibes handles the rest</Run></TextBlock>
+										<TextBlock Margin="0,6,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#ADADB8" TextWrapping="Wrap" xml:space="preserve"><Run FontWeight="SemiBold" Foreground="#F48024">6.</Run><Run> Optionally add a custom subdomain via the </Run><Run FontWeight="SemiBold" Foreground="#EFEFF1">Open Dashboard</Run><Run> button below</Run></TextBlock>
+									</StackPanel>
+								</Border>
+
+								<!-- Account ID -->
+								<Border Margin="0,0,0,2" Padding="18,12" Background="#0E0E10" CornerRadius="4" Tag="cloudflare account id">
+									<Grid><Grid.ColumnDefinitions><ColumnDefinition Width="160" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+										<StackPanel VerticalAlignment="Center">
+											<TextBlock FontFamily="Segoe UI" FontSize="13" Foreground="#EFEFF1" Text="Account ID" />
+											<TextBlock Margin="0,2,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" Text="From Workers dashboard" />
+										</StackPanel>
+										<TextBox x:Name="CfAccountIdInput" Grid.Column="1" Style="{StaticResource SettingsInput}" TextChanged="Cfg_Changed" />
+									</Grid>
+								</Border>
+
+								<!-- API Token -->
+								<Border Margin="0,0,0,2" Padding="18,12" Background="#0E0E10" CornerRadius="4" Tag="cloudflare api token secret">
+									<Grid><Grid.ColumnDefinitions><ColumnDefinition Width="160" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+										<StackPanel VerticalAlignment="Center">
+											<TextBlock FontFamily="Segoe UI" FontSize="13" Foreground="#EFEFF1" Text="API Token" />
+											<TextBlock Margin="0,2,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" Text="Edit Cloudflare Workers token" />
+										</StackPanel>
+										<PasswordBox x:Name="CfApiTokenInput" Grid.Column="1" Style="{StaticResource SettingsPassword}" PasswordChanged="CfToken_Changed" />
+									</Grid>
+								</Border>
+
+								<!-- Worker name -->
+								<Border Margin="0,0,0,2" Padding="18,12" Background="#0E0E10" CornerRadius="4" Tag="cloudflare worker name script">
+									<Grid><Grid.ColumnDefinitions><ColumnDefinition Width="160" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+										<StackPanel VerticalAlignment="Center">
+											<TextBlock FontFamily="Segoe UI" FontSize="13" Foreground="#EFEFF1" Text="Worker Name" />
+											<TextBlock Margin="0,2,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" Text="Script name on workers.dev" />
+										</StackPanel>
+										<TextBox x:Name="CfWorkerNameInput" Grid.Column="1" Style="{StaticResource SettingsInput}" TextChanged="Cfg_Changed" />
+									</Grid>
+								</Border>
+
+								<!-- Enable toggle -->
+								<Border Margin="0,0,0,2" Padding="18,12" Background="#0E0E10" CornerRadius="4" Tag="cloudflare queue page enable live">
+									<Grid><Grid.ColumnDefinitions><ColumnDefinition Width="160" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+										<StackPanel VerticalAlignment="Center">
+											<TextBlock FontFamily="Segoe UI" FontSize="13" Foreground="#EFEFF1" Text="Use Workers Queue" />
+										</StackPanel>
+										<CheckBox x:Name="CfEnabledCheck" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Left" Checked="Cfg_CheckChanged" Unchecked="Cfg_CheckChanged" />
+									</Grid>
+								</Border>
+
+								<!-- Deploy + status -->
+								<Border Margin="0,8,0,2" Padding="18,14" Background="#0E0E10" CornerRadius="4">
+									<StackPanel>
+										<Grid>
+											<StackPanel VerticalAlignment="Center">
+												<TextBlock FontFamily="Segoe UI" FontSize="13" Foreground="#EFEFF1" Text="Worker" />
+												<TextBlock x:Name="CfWorkerUrlText" Margin="0,2,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" Text="Not deployed" TextWrapping="Wrap" />
+											</StackPanel>
+											<StackPanel HorizontalAlignment="Right" VerticalAlignment="Center" Orientation="Horizontal">
+												<Button x:Name="CfOpenQueueBtn" Margin="0,0,6,0" Click="CfOpenQueue_Click" Content="Open Queue" Style="{StaticResource ActionBtn}" IsEnabled="False" />
+												<Button x:Name="CfOpenDashboardBtn" Margin="0,0,6,0" Click="CfOpenDashboard_Click" Content="Open Dashboard" Style="{StaticResource ActionBtn}" IsEnabled="False" />
+												<Button x:Name="CfDeployBtn" Click="CfDeploy_Click" Content="Deploy" Style="{StaticResource ActionBtn}" />
+											</StackPanel>
+										</Grid>
+										<TextBlock x:Name="CfDeployStatusText" Margin="0,8,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" Visibility="Collapsed" TextWrapping="Wrap" />
+									</StackPanel>
+								</Border>
+
+								<!-- Custom queue URL -->
+								<Border Margin="0,2,0,0" Padding="18,12" Background="#0E0E10" CornerRadius="4" Tag="cloudflare queue url subdomain custom override">
+									<Grid><Grid.ColumnDefinitions><ColumnDefinition Width="160" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+										<StackPanel VerticalAlignment="Center">
+											<TextBlock FontFamily="Segoe UI" FontSize="13" Foreground="#EFEFF1" Text="Custom queue URL" />
+											<TextBlock Margin="0,2,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" Text="Override workers.dev with your subdomain" />
+										</StackPanel>
+										<TextBox x:Name="CfCustomUrlInput" Grid.Column="1" Style="{StaticResource SettingsInput}" Tag="https://queue.yourdomain.com" TextChanged="Cfg_Changed" />
+									</Grid>
+								</Border>
+							</StackPanel>
+
 						</StackPanel>
 					</ScrollViewer>
 				</Grid>
@@ -1124,7 +1220,7 @@
 					<TextBlock FontFamily="Segoe UI" FontSize="16" FontWeight="Bold" Foreground="#1DB954" Text="Spotify" />
 					<Rectangle Margin="0,8,0,16" Height="1" Fill="#2D2D35" />
 					<TextBlock FontFamily="Segoe UI" FontSize="13" FontWeight="SemiBold" Foreground="#EFEFF1" Text="Step 1 - Create a Spotify app" />
-					<TextBlock Margin="0,6,0,0" FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" TextWrapping="Wrap" xml:space="preserve"><Run>Go to </Run><Run Foreground="#1DB954" FontWeight="SemiBold">developer.spotify.com/dashboard</Run><Run> and log in. Click </Run><Run FontWeight="SemiBold" Foreground="#EFEFF1">Create app</Run><Run>. Give it any name, then under </Run><Run FontWeight="SemiBold" Foreground="#EFEFF1">Redirect URIs</Run><Run> add:</Run></TextBlock>
+					<TextBlock Margin="0,6,0,0" FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" TextWrapping="Wrap" xml:space="preserve"><Run>Go to </Run><Hyperlink NavigateUri="https://developer.spotify.com/dashboard" RequestNavigate="Hyperlink_Navigate" Foreground="#1DB954">developer.spotify.com/dashboard</Hyperlink><Run> and log in. Click </Run><Run FontWeight="SemiBold" Foreground="#EFEFF1">Create app</Run><Run>. Give it any name, then under </Run><Run FontWeight="SemiBold" Foreground="#EFEFF1">Redirect URIs</Run><Run> add:</Run></TextBlock>
 					<Border Margin="0,8,0,8" Padding="12,8" Background="#0E0E10" CornerRadius="4"><TextBlock FontFamily="Consolas" FontSize="12" Foreground="#9146FF" Text="http://127.0.0.1:8888/callback/" /></Border>
 					<TextBlock Margin="0,0,0,0" FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" TextWrapping="Wrap" xml:space="preserve"><Run>(Change </Run><Run FontWeight="SemiBold" Foreground="#EFEFF1">8888</Run><Run> to match Callback Port in Config → Spotify.) Set the API to </Run><Run FontWeight="SemiBold" Foreground="#EFEFF1">Web API</Run><Run> and save.</Run></TextBlock>
 					<TextBlock Margin="0,16,0,0" FontFamily="Segoe UI" FontSize="13" FontWeight="SemiBold" Foreground="#EFEFF1" Text="Step 2 - Paste your Client ID" />

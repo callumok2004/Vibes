@@ -183,7 +183,8 @@ public class SpotifyService
 			}
 
 			if (!resp.IsSuccessStatusCode) {
-				AppLogger.Instance.Warning($"Spotify API: {resp.StatusCode}");
+				var body = await resp.Content.ReadAsStringAsync();
+				AppLogger.Instance.Warning($"Spotify API: {resp.StatusCode} | {resp.RequestMessage?.RequestUri} | {body}");
 				return;
 			}
 
@@ -343,7 +344,11 @@ public class SpotifyService
 		req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
 		var resp = await _http.SendAsync(req);
-		if (!resp.IsSuccessStatusCode) return [];
+		if (!resp.IsSuccessStatusCode) {
+			var body = await resp.Content.ReadAsStringAsync();
+			AppLogger.Instance.Warning($"Spotify queue: {resp.StatusCode} | {body}");
+			return [];
+		}
 
 		var json = JsonSerializer.Deserialize<JsonElement>(await resp.Content.ReadAsStringAsync());
 		if (!json.TryGetProperty("queue", out var queueArr)) return [];

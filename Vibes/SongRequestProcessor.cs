@@ -83,6 +83,10 @@ public class SongRequestProcessor
 				break;
 			}
 			case CommandType.Queue: {
+				if (cfg.CloudflareQueueEnabled && !string.IsNullOrEmpty(cfg.CloudflareQueueUrl)) {
+					await ReplyAsync(cfg.CloudflareQueueUrl);
+					return;
+				}
 				var pending = SongQueue.Pending.Take(5).ToList();
 				if (pending.Count == 0) { await ReplyAsync(cfg.BotRespNoQueue); return; }
 				var list = string.Join(" | ", pending.Select((r, i) => $"#{i + 1} {r.Artist} - {r.Title}"));
@@ -292,6 +296,7 @@ public class SongRequestProcessor
 			TrackId     = track.TrackId,
 			Title       = track.Title,
 			Artist      = track.Artist,
+			AlbumCover  = track.AlbumArt,
 			DurationMs  = track.DurationMs,
 			Requester   = user,
 			Source      = source,

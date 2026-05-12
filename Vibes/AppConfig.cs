@@ -97,6 +97,17 @@ public class AppConfig
 	public List<string> BlockedSongs { get; set; } = [];
 	public List<string> BlockedUsers { get; set; } = [];
 
+	// -- CLOUDFLARE QUEUE PAGE -------------------------------------------------
+	public bool   CloudflareQueueEnabled { get; set; } = false;
+	public string CloudflareAccountId   { get; set; } = "";
+	public string CloudflareWorkerName  { get; set; } = "vibes-queue";
+	public string CloudflareWorkerUrl   { get; set; } = "";
+	public string CloudflareCustomUrl   { get; set; } = "";
+
+	public string CloudflareQueueUrl => !string.IsNullOrEmpty(CloudflareCustomUrl)
+		? CloudflareCustomUrl.TrimEnd('/')
+		: CloudflareWorkerUrl.TrimEnd('/');
+
 	// -- APP SETTINGS ----------------------------------------------------------
 	public bool StartWithWindows { get; set; } = false;
 	public bool MinimizeToTray { get; set; } = true;

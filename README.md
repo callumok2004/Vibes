@@ -1,5 +1,9 @@
 # Vibes
 
+[![Release](https://img.shields.io/github/v/release/callumok2004/Vibes?style=flat-square)](https://github.com/callumok2004/Vibes/releases/latest)
+[![Build](https://img.shields.io/github/actions/workflow/status/callumok2004/Vibes/release.yml?style=flat-square)](https://github.com/callumok2004/Vibes/actions/workflows/release.yml)
+[![License](https://img.shields.io/github/license/callumok2004/Vibes?style=flat-square)](LICENSE)
+
 ![Vibes screenshot](assets/screenshot.png)
 
 A Twitch song request manager for Spotify. Viewers request songs via chat commands or channel point redemptions, and they get queued directly into your Spotify playback.

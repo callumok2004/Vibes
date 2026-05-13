@@ -19,16 +19,20 @@ public class SongRequestProcessor
 
 		// Check all enabled commands first
 		foreach (var cmd in cfg.Commands.Where(c => c.IsEnabled)) {
-			var trigger = cmd.Trigger.Trim();
-			if (!msg.Message.Equals(trigger, StringComparison.OrdinalIgnoreCase) &&
-			    !msg.Message.StartsWith(trigger + " ", StringComparison.OrdinalIgnoreCase))
-				continue;
+			var triggers = cmd.Aliases.Select(a => a.Trim()).Prepend(cmd.Trigger.Trim());
+			var matched = triggers.Any(t =>
+				msg.Message.Equals(t, StringComparison.OrdinalIgnoreCase) ||
+				msg.Message.StartsWith(t + " ", StringComparison.OrdinalIgnoreCase));
+			if (!matched) continue;
 
 			var level = GetUserLevel(msg);
 			if (!cmd.AllowedUserLevels.Contains((int)level)) return;
 
-			var args = msg.Message.Length > trigger.Length
-				? msg.Message[(trigger.Length + 1)..].Trim()
+			var matchedTrigger = triggers.First(t =>
+				msg.Message.Equals(t, StringComparison.OrdinalIgnoreCase) ||
+				msg.Message.StartsWith(t + " ", StringComparison.OrdinalIgnoreCase));
+			var args = msg.Message.Length > matchedTrigger.Length
+				? msg.Message[(matchedTrigger.Length + 1)..].Trim()
 				: "";
 
 			await HandleCommandAsync(cmd.CommandType, msg, args);

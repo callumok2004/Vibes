@@ -211,35 +211,119 @@ public partial class MainWindow : Window
 			CornerRadius = new CornerRadius(4)
 		};
 
+		// col0=toggle  col1=name  col2=trigger  col3=aliases
 		var grid = new Grid();
-		grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(32) });
-		grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(150) });
+		grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(44) });
+		grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(160) });
+		grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 		grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-		// Enabled toggle
-		var toggle = new CheckBox { IsChecked = cmd.IsEnabled, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center };
+		var toggle = new CheckBox { IsChecked = cmd.IsEnabled, VerticalAlignment = VerticalAlignment.Center };
 		toggle.Checked   += (_, _) => { cmd.IsEnabled = true;  AppConfig.Save(); };
 		toggle.Unchecked += (_, _) => { cmd.IsEnabled = false; AppConfig.Save(); };
 		Grid.SetColumn(toggle, 0);
 
-		// Name label
 		var label = new TextBlock {
 			Text = cmd.Name,
-			FontFamily = new FontFamily("Segoe UI"),
 			FontSize = 13,
 			Foreground = new SolidColorBrush(Color.FromRgb(0xEF, 0xEF, 0xF1)),
 			VerticalAlignment = VerticalAlignment.Center
 		};
 		Grid.SetColumn(label, 1);
 
-		// Trigger input
-		var trigger = new TextBox { Text = cmd.Trigger, Style = (Style)FindResource("SettingsInput") };
+		var trigger = new TextBox { Text = cmd.Trigger, Style = (Style)FindResource("SettingsInput"), Margin = new Thickness(0, 0, 6, 0) };
 		trigger.TextChanged += (_, _) => { cmd.Trigger = trigger.Text.Trim(); AppConfig.Save(); };
 		Grid.SetColumn(trigger, 2);
+
+		// col3: tag-input style — border matching SettingsInput, chips inside, text input at end
+		var tagBorder = new Border {
+			Background  = new SolidColorBrush(Color.FromRgb(0x18, 0x18, 0x1B)),
+			BorderBrush = new SolidColorBrush(Color.FromRgb(0x2D, 0x2D, 0x35)),
+			BorderThickness = new Thickness(1),
+			CornerRadius = new CornerRadius(4),
+			Padding = new Thickness(10, 7, 10, 7),
+			Margin = new Thickness(6, 0, 0, 0),
+			VerticalAlignment = VerticalAlignment.Stretch
+		};
+		Grid.SetColumn(tagBorder, 3);
+
+		// chips panel on the left, input stretches to fill the rest via DockPanel
+		StackPanel? chipsPanel = null;
+		TextBox?    aliasInput = null;
+
+		void RebuildAliases() {
+			chipsPanel!.Children.Clear();
+
+			foreach (var alias in cmd.Aliases) {
+				var chip = new Border {
+					Background = new SolidColorBrush(Color.FromRgb(0x2D, 0x2D, 0x35)),
+					CornerRadius = new CornerRadius(3),
+					Padding = new Thickness(6, 1, 4, 1),
+					Margin = new Thickness(0, 0, 5, 0),
+					VerticalAlignment = VerticalAlignment.Center
+				};
+				var chipRow = new StackPanel { Orientation = Orientation.Horizontal };
+				chipRow.Children.Add(new TextBlock {
+					Text = alias, FontSize = 12,
+					Foreground = new SolidColorBrush(Color.FromRgb(0xEF, 0xEF, 0xF1)),
+					VerticalAlignment = VerticalAlignment.Center
+				});
+				var x = new TextBlock {
+					Text = " ×", FontSize = 12,
+					Foreground = new SolidColorBrush(Color.FromRgb(0x4A, 0x4A, 0x55)),
+					VerticalAlignment = VerticalAlignment.Center,
+					Cursor = System.Windows.Input.Cursors.Hand
+				};
+				var captured = alias;
+				x.MouseLeftButtonUp += (_, _) => { cmd.Aliases.Remove(captured); AppConfig.Save(); RebuildAliases(); };
+				chipRow.Children.Add(x);
+				chip.Child = chipRow;
+				chipsPanel.Children.Add(chip);
+			}
+
+			if (aliasInput != null)
+				aliasInput.Visibility = cmd.Aliases.Count < 5 ? Visibility.Visible : Visibility.Collapsed;
+		}
+
+		aliasInput = new TextBox {
+			FontSize = 12,
+			Background = Brushes.Transparent,
+			BorderThickness = new Thickness(0),
+			Foreground = new SolidColorBrush(Color.FromRgb(0xEF, 0xEF, 0xF1)),
+			CaretBrush = new SolidColorBrush(Color.FromRgb(0xEF, 0xEF, 0xF1)),
+			Padding = new Thickness(0),
+			VerticalAlignment = VerticalAlignment.Center,
+			HorizontalAlignment = HorizontalAlignment.Stretch
+		};
+		void CommitAlias() {
+			var val = aliasInput!.Text.Trim();
+			if (!string.IsNullOrEmpty(val) && !cmd.Aliases.Contains(val, StringComparer.OrdinalIgnoreCase)) {
+				cmd.Aliases.Add(val);
+				AppConfig.Save();
+			}
+			aliasInput.Text = "";
+			RebuildAliases();
+		}
+		aliasInput.LostFocus += (_, _) => CommitAlias();
+		aliasInput.KeyDown += (_, e) => {
+			if (e.Key != System.Windows.Input.Key.Enter) return;
+			CommitAlias();
+			e.Handled = true;
+		};
+
+		chipsPanel = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+		RebuildAliases();
+
+		var dockPanel = new DockPanel { VerticalAlignment = VerticalAlignment.Center };
+		DockPanel.SetDock(chipsPanel, Dock.Left);
+		dockPanel.Children.Add(chipsPanel);
+		dockPanel.Children.Add(aliasInput); // last child fills remaining space
+		tagBorder.Child = dockPanel;
 
 		grid.Children.Add(toggle);
 		grid.Children.Add(label);
 		grid.Children.Add(trigger);
+		grid.Children.Add(tagBorder);
 		border.Child = grid;
 		return border;
 	}

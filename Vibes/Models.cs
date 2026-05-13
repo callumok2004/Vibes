@@ -5,6 +5,7 @@ public class TwitchCommand
 	public CommandType CommandType { get; set; }
 	public string Name { get; set; } = "";
 	public string Trigger { get; set; } = "";
+	public List<string> Aliases { get; set; } = [];
 	public bool IsEnabled { get; set; } = true;
 	public List<int> AllowedUserLevels { get; set; } = [0, 1, 2, 3, 4, 5, 6, 7];
 

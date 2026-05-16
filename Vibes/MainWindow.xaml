@@ -1202,6 +1202,18 @@
 										<TextBox x:Name="CfCustomUrlInput" Grid.Column="1" Style="{StaticResource SettingsInput}" Tag="https://queue.yourdomain.com" TextChanged="Cfg_Changed" />
 									</Grid>
 								</Border>
+
+								<!-- Worker usage -->
+								<Border Margin="0,2,0,0" Padding="18,12" Background="#0E0E10" CornerRadius="4">
+									<Grid><Grid.ColumnDefinitions><ColumnDefinition Width="160" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+										<StackPanel VerticalAlignment="Center">
+											<TextBlock FontFamily="Segoe UI" FontSize="13" Foreground="#EFEFF1" Text="Worker requests today" />
+											<TextBlock Margin="0,2,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" Text="Free tier: 100,000 / day" />
+										</StackPanel>
+										<TextBlock x:Name="CfUsageText" Grid.Column="1" FontFamily="Segoe UI" FontSize="13" Foreground="#ADADB8" VerticalAlignment="Center" Text="—" />
+										<Button x:Name="CfUsageRefreshBtn" Grid.Column="2" Click="CfUsageRefresh_Click" Content="Refresh" Style="{StaticResource ActionBtn}" IsEnabled="False" />
+									</Grid>
+								</Border>
 							</StackPanel>
 
 						</StackPanel>

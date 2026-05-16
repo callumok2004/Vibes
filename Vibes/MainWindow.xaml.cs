@@ -890,6 +890,7 @@ if (int.TryParse(VoteSkipCountInput.Text,    out int vs))  c.VoteSkipCount      
 		CatTwitch.Visibility    = NavTwitch.IsChecked    == true ? Visibility.Visible : Visibility.Collapsed;
 		CatSpotify.Visibility   = NavSpotify.IsChecked   == true ? Visibility.Visible : Visibility.Collapsed;
 		CatQueuePage.Visibility = NavQueuePage.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+		if (NavQueuePage.IsChecked == true) _ = RefreshCfUsageAsync();
 		CatRequests.Visibility  = NavRequests.IsChecked  == true ? Visibility.Visible : Visibility.Collapsed;
 		CatLimits.Visibility    = NavLimits.IsChecked    == true ? Visibility.Visible : Visibility.Collapsed;
 		CatResponses.Visibility = NavResponses.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
@@ -943,6 +944,28 @@ if (int.TryParse(VoteSkipCountInput.Text,    out int vs))  c.VoteSkipCount      
 		CfWorkerUrlText.Text         = deployed ? cfg.CloudflareWorkerUrl : "Not deployed";
 		CfOpenDashboardBtn.IsEnabled = deployed;
 		CfOpenQueueBtn.IsEnabled     = deployed;
+		CfUsageRefreshBtn.IsEnabled  = deployed;
+	}
+
+	private async void CfUsageRefresh_Click(object sender, RoutedEventArgs e) {
+		await RefreshCfUsageAsync();
+	}
+
+	private async Task RefreshCfUsageAsync() {
+		var cfg = AppConfig.Instance;
+		if (string.IsNullOrEmpty(cfg.CloudflareWorkerUrl)) return;
+		CfUsageText.Text = "Loading…";
+		var count = await CloudflareService.GetTodayRequestCountAsync(
+			cfg.CloudflareAccountId, Credentials.Instance.CloudflareApiToken, cfg.CloudflareWorkerName);
+
+		var resetIn = DateTime.UtcNow.Date.AddDays(1) - DateTime.UtcNow;
+		var resetStr = resetIn.Hours > 0
+			? $"{resetIn.Hours}h {resetIn.Minutes}m"
+			: $"{resetIn.Minutes}m";
+
+		CfUsageText.Text = count.HasValue
+			? $"{count.Value:N0} / 100,000  ·  resets in {resetStr}"
+			: "Unable to fetch";
 	}
 
 	private void CfOpenQueue_Click(object sender, RoutedEventArgs e) {

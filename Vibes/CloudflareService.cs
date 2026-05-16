@@ -155,6 +155,38 @@ public class CloudflareService
 			AppLogger.Instance.Warning($"Queue push failed: {resp.StatusCode}");
 	}
 
+	// -- Analytics -------------------------------------------------------------
+
+	public static async Task<long?> GetTodayRequestCountAsync(string accountId, string apiToken, string workerName) {
+		var now   = DateTime.UtcNow;
+		var start = now.Date.ToString("yyyy-MM-ddT00:00:00Z");
+		var end   = now.ToString("yyyy-MM-ddTHH:mm:ssZ");
+
+		var query = $$"""
+		{
+		  "query": "{ viewer { accounts(filter: { accountTag: \"{{accountId}}\" }) { workersInvocationsAdaptive(limit: 1, filter: { scriptName: \"{{workerName}}\", datetime_geq: \"{{start}}\", datetime_leq: \"{{end}}\" }) { sum { requests } } } } }"
+		}
+		""";
+
+		using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.cloudflare.com/client/v4/graphql");
+		req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiToken);
+		req.Content = new StringContent(query, Encoding.UTF8, "application/json");
+		var resp = await _http.SendAsync(req);
+		var json = JsonSerializer.Deserialize<JsonElement>(await resp.Content.ReadAsStringAsync());
+
+		try {
+			var invocations = json
+				.GetProperty("data").GetProperty("viewer")
+				.GetProperty("accounts")[0]
+				.GetProperty("workersInvocationsAdaptive");
+			if (invocations.GetArrayLength() == 0) return 0;
+			return invocations[0].GetProperty("sum").GetProperty("requests").GetInt64();
+		}
+		catch {
+			return null;
+		}
+	}
+
 	// -- Helpers ---------------------------------------------------------------
 
 	private async Task<JsonElement> GetAsync(string url, string apiToken) {

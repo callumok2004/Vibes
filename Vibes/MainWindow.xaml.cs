@@ -752,8 +752,10 @@ if (int.TryParse(VoteSkipCountInput.Text,    out int vs))  c.VoteSkipCount      
 			}
 
 			// Mark previous track as played when a new one starts
-			if (_lastPlayedTrackId != null && _lastPlayedTrackId != track.TrackId)
+			if (_lastPlayedTrackId != null && _lastPlayedTrackId != track.TrackId) {
 				SongQueue.MarkPlayed(_lastPlayedTrackId);
+				SongRequestProcessor.Instance.ResetVoteSkip();
+			}
 			_lastPlayedTrackId = track.TrackId;
 
 			SongTitleText.Text  = track.Title;

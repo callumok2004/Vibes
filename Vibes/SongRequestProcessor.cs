@@ -12,6 +12,8 @@ public class SongRequestProcessor
 
 	private SongRequestProcessor() { }
 
+	public void ResetVoteSkip() => _voteSkipUsers.Clear();
+
 	// -- Entry point -----------------------------------------------------------
 
 	public async Task HandleMessageAsync(TwitchChatMessage msg) {
@@ -118,6 +120,7 @@ public class SongRequestProcessor
 				break;
 			}
 			case CommandType.Skip: {
+				_voteSkipUsers.Clear();
 				await SpotifyService.Instance.SkipAsync();
 				await ReplyAsync(Format(cfg.BotRespSkip, user: user));
 				break;

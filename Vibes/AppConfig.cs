@@ -113,6 +113,7 @@ public class AppConfig
 	// -- APP SETTINGS ----------------------------------------------------------
 	public bool StartWithWindows { get; set; } = false;
 	public bool MinimizeToTray { get; set; } = true;
+	public bool TrackStats { get; set; } = false;
 
 	// -------------------------------------------------------------------------
 

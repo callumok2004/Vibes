@@ -341,6 +341,8 @@ public class SongRequestProcessor
 		await ReplyAsync(Format(cfg.BotRespSuccess,
 			user: user, artist: track.Artist, title: track.Title, pos: pos));
 
+		if (cfg.TrackStats) RequestStats.Instance.Record(track, user);
+
 		AppLogger.Instance.Information($"SR: {user} -> {track.Artist} - {track.Title} (#{pos})");
 		await Fulfill();
 	}

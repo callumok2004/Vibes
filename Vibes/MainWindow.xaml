@@ -425,6 +425,7 @@
 				<StackPanel Orientation="Horizontal">
 					<RadioButton x:Name="TabMain"   Checked="Tab_Checked" Content="NOW PLAYING" IsChecked="True" Style="{StaticResource TabBtn}" />
 					<RadioButton x:Name="TabQueue"  Checked="Tab_Checked" Content="QUEUE"        Style="{StaticResource TabBtn}" />
+					<RadioButton x:Name="TabStats"  Checked="Tab_Checked" Content="STATS"        Style="{StaticResource TabBtn}" />
 					<RadioButton x:Name="TabLogs"   Checked="Tab_Checked" Content="LOGS"         Style="{StaticResource TabBtn}" />
 					<RadioButton x:Name="TabConfig" Checked="Tab_Checked" Content="CONFIG"       Style="{StaticResource TabBtn}" />
 					<RadioButton x:Name="TabGuide"  Checked="Tab_Checked" Content="SETUP GUIDE"  Style="{StaticResource TabBtn}" />
@@ -516,6 +517,42 @@
 							</DataTemplate>
 						</ListBox.ItemTemplate>
 					</ListBox>
+				</Grid>
+
+				<!-- STATS - -->
+				<Grid x:Name="StatsPanel" Visibility="Collapsed">
+					<Grid.RowDefinitions>
+						<RowDefinition Height="Auto" />
+						<RowDefinition Height="*" />
+					</Grid.RowDefinitions>
+					<Border Grid.Row="0" Padding="16,12" Background="#0E0E10" BorderBrush="#2D2D35" BorderThickness="0,0,0,1">
+						<Grid>
+							<TextBlock VerticalAlignment="Center" FontFamily="Segoe UI" FontSize="12" FontWeight="SemiBold" Foreground="#ADADB8" Text="REQUEST STATS" />
+							<StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+								<TextBlock x:Name="StatsTotalText" VerticalAlignment="Center" Margin="0,0,12,0" FontFamily="Segoe UI" FontSize="12" Foreground="#4A4A55" />
+								<Button Content="Reset" Click="StatsReset_Click" Style="{StaticResource ActionBtn}" Padding="10,3" FontSize="11" />
+							</StackPanel>
+						</Grid>
+					</Border>
+					<ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+						<Grid Margin="16,14">
+							<Grid.ColumnDefinitions>
+								<ColumnDefinition Width="*" />
+								<ColumnDefinition Width="24" />
+								<ColumnDefinition Width="*" />
+							</Grid.ColumnDefinitions>
+							<StackPanel Grid.Column="0">
+								<TextBlock Margin="0,0,0,10" FontFamily="Segoe UI" FontSize="11" FontWeight="Bold" Foreground="#ADADB8" Text="TOP SONGS" />
+								<StackPanel x:Name="TopSongsStack" />
+								<TextBlock x:Name="TopSongsEmpty" FontFamily="Segoe UI" FontSize="12" Foreground="#4A4A55" Text="No requests yet." Visibility="Collapsed" />
+							</StackPanel>
+							<StackPanel Grid.Column="2">
+								<TextBlock Margin="0,0,0,10" FontFamily="Segoe UI" FontSize="11" FontWeight="Bold" Foreground="#ADADB8" Text="TOP REQUESTERS" />
+								<StackPanel x:Name="TopRequestersStack" />
+								<TextBlock x:Name="TopRequestersEmpty" FontFamily="Segoe UI" FontSize="12" Foreground="#4A4A55" Text="No requests yet." Visibility="Collapsed" />
+							</StackPanel>
+						</Grid>
+					</ScrollViewer>
 				</Grid>
 
 				<!-- LOGS - -->
@@ -1113,6 +1150,15 @@
 											<TextBlock Margin="0,2,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" Text="Hide to system tray on minimize" />
 										</StackPanel>
 										<CheckBox x:Name="MinimizeToTrayCheck" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Left" Checked="Cfg_CheckChanged" Unchecked="Cfg_CheckChanged" />
+									</Grid>
+								</Border>
+								<Border Margin="0,0,0,2" Padding="18,12" Background="#0E0E10" CornerRadius="4" Tag="stats statistics track most requested songs requesters leaderboard">
+									<Grid><Grid.ColumnDefinitions><ColumnDefinition Width="200" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+										<StackPanel VerticalAlignment="Center">
+											<TextBlock FontFamily="Segoe UI" FontSize="13" Foreground="#EFEFF1" Text="Track request stats" />
+											<TextBlock Margin="0,2,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" Text="Record top songs and requesters (shows the Stats tab)" />
+										</StackPanel>
+										<CheckBox x:Name="TrackStatsCheck" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Left" Checked="Cfg_CheckChanged" Unchecked="Cfg_CheckChanged" />
 									</Grid>
 								</Border>
 								<TextBlock Margin="0,16,0,10" FontFamily="Segoe UI" FontSize="11" FontWeight="Bold" Foreground="#ADADB8" Text="VERSION" />

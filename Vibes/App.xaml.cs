@@ -8,6 +8,7 @@ public partial class App : Application
 	{
 		AppConfig.Load();
 		Credentials.Load();
+		RequestStats.Load();
 		AppLogger.Instance.SetDispatcher(Dispatcher);
 		base.OnStartup(e);
 	}

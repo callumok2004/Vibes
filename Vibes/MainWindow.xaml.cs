@@ -70,6 +70,7 @@ public partial class MainWindow : Window
 
 		UpdateSrStatus();
 		UpdateBotStatusBar();
+		UpdateStatsTabVisibility();
 
 		_statusTimer.Start();
 		_progressTimer.Start();
@@ -158,6 +159,7 @@ public partial class MainWindow : Window
 		// App
 		StartWithWindowsCheck.IsChecked = c.StartWithWindows;
 		MinimizeToTrayCheck.IsChecked   = c.MinimizeToTray;
+		TrackStatsCheck.IsChecked       = c.TrackStats;
 
 		// Queue page
 		CfAccountIdInput.Text    = c.CloudflareAccountId;
@@ -504,11 +506,13 @@ if (int.TryParse(VoteSkipCountInput.Text,    out int vs))  c.VoteSkipCount      
 
 		c.StartWithWindows        = StartWithWindowsCheck.IsChecked == true;
 		c.MinimizeToTray          = MinimizeToTrayCheck.IsChecked   == true;
+		c.TrackStats              = TrackStatsCheck.IsChecked        == true;
 		c.CloudflareQueueEnabled  = CfEnabledCheck.IsChecked        == true;
 		AppConfig.Save();
 		ApplyStartWithWindows(c.StartWithWindows);
 		UpdateSrStatus();
 		UpdateBotStatusBar();
+		UpdateStatsTabVisibility();
 	}
 
 
@@ -544,9 +548,90 @@ if (int.TryParse(VoteSkipCountInput.Text,    out int vs))  c.VoteSkipCount      
 		if (MainPanel == null) return;
 		MainPanel.Visibility  = TabMain.IsChecked   == true ? Visibility.Visible : Visibility.Collapsed;
 		QueuePanel.Visibility = TabQueue.IsChecked  == true ? Visibility.Visible : Visibility.Collapsed;
+		StatsPanel.Visibility = TabStats.IsChecked  == true ? Visibility.Visible : Visibility.Collapsed;
 		LogsPanel.Visibility  = TabLogs.IsChecked   == true ? Visibility.Visible : Visibility.Collapsed;
 		ConfigPanel.Visibility= TabConfig.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
 		GuidePanel.Visibility = TabGuide.IsChecked  == true ? Visibility.Visible : Visibility.Collapsed;
+		if (TabStats.IsChecked == true) BuildStatsView();
+	}
+
+	private void UpdateStatsTabVisibility() {
+		if (TabStats == null) return;
+		var on = AppConfig.Instance.TrackStats;
+		TabStats.Visibility = on ? Visibility.Visible : Visibility.Collapsed;
+		if (!on && TabStats.IsChecked == true) TabMain.IsChecked = true;
+	}
+
+	private void BuildStatsView() {
+		var stats = RequestStats.Instance;
+		StatsTotalText.Text = $"{stats.TotalRequests:N0} total";
+
+		TopSongsStack.Children.Clear();
+		var songs = stats.TopSongs(15).ToList();
+		TopSongsEmpty.Visibility = songs.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+		int rank = 1;
+		foreach (var s in songs)
+			TopSongsStack.Children.Add(BuildStatRow(rank++, $"{s.Artist} - {s.Title}", s.Count));
+
+		TopRequestersStack.Children.Clear();
+		var users = stats.TopRequesters(15).ToList();
+		TopRequestersEmpty.Visibility = users.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+		rank = 1;
+		foreach (var u in users)
+			TopRequestersStack.Children.Add(BuildStatRow(rank++, u.Name, u.Count));
+	}
+
+	private static UIElement BuildStatRow(int rank, string label, int count) {
+		var border = new Border {
+			Margin = new Thickness(0, 0, 0, 2),
+			Padding = new Thickness(12, 8, 12, 8),
+			Background = new SolidColorBrush(Color.FromRgb(0x0E, 0x0E, 0x10)),
+			CornerRadius = new CornerRadius(4),
+		};
+		var grid = new Grid();
+		grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(28) });
+		grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+		grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+		var rankText = new TextBlock {
+			Text = $"{rank}", FontSize = 13, FontWeight = FontWeights.Bold,
+			Foreground = new SolidColorBrush(Color.FromRgb(0x4A, 0x4A, 0x55)),
+			VerticalAlignment = VerticalAlignment.Center,
+		};
+		Grid.SetColumn(rankText, 0);
+
+		var nameText = new TextBlock {
+			Text = label, FontSize = 13, TextTrimming = TextTrimming.CharacterEllipsis,
+			Foreground = new SolidColorBrush(Color.FromRgb(0xEF, 0xEF, 0xF1)),
+			VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0),
+		};
+		Grid.SetColumn(nameText, 1);
+
+		var countBadge = new Border {
+			Padding = new Thickness(8, 2, 8, 2), VerticalAlignment = VerticalAlignment.Center,
+			Background = new SolidColorBrush(Color.FromRgb(0x2D, 0x1B, 0x69)),
+			CornerRadius = new CornerRadius(10),
+		};
+		countBadge.Child = new TextBlock {
+			Text = $"{count}×", FontSize = 11,
+			Foreground = new SolidColorBrush(Color.FromRgb(0x91, 0x46, 0xFF)),
+		};
+		Grid.SetColumn(countBadge, 2);
+
+		grid.Children.Add(rankText);
+		grid.Children.Add(nameText);
+		grid.Children.Add(countBadge);
+		border.Child = grid;
+		return border;
+	}
+
+	private void StatsReset_Click(object sender, RoutedEventArgs e) {
+		var result = MessageBox.Show(
+			"Clear all request stats? This cannot be undone.",
+			"Reset Stats", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+		if (result != MessageBoxResult.Yes) return;
+		RequestStats.Instance.Reset();
+		BuildStatsView();
 	}
 
 	// -- Window chrome ---------------------------------------------------------

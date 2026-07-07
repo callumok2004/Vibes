@@ -190,6 +190,8 @@ public partial class MainWindow : Window
 		RespVoteSkipInput.Text     = c.BotRespVoteSkip;
 		RespSongLikeInput.Text     = c.BotRespSongLike;
 		RespToggleSrInput.Text     = c.BotRespToggleSr;
+		RespVolumeInput.Text       = c.BotRespVolume;
+		RespPlayPauseInput.Text    = c.BotRespPlayPause;
 
 		_configReady = true;
 		UpdateAllResponsePreviews();
@@ -392,6 +394,8 @@ if (int.TryParse(VoteSkipCountInput.Text,    out int vs))  c.VoteSkipCount      
 		c.BotRespVoteSkip     = RespVoteSkipInput.Text;
 		c.BotRespSongLike     = RespSongLikeInput.Text;
 		c.BotRespToggleSr     = RespToggleSrInput.Text;
+		c.BotRespVolume       = RespVolumeInput.Text;
+		c.BotRespPlayPause    = RespPlayPauseInput.Text;
 
 		AppConfig.Save();
 	}
@@ -428,6 +432,8 @@ if (int.TryParse(VoteSkipCountInput.Text,    out int vs))  c.VoteSkipCount      
 			"RespVoteSkipInput"     => defaults.BotRespVoteSkip,
 			"RespSongLikeInput"     => defaults.BotRespSongLike,
 			"RespToggleSrInput"     => defaults.BotRespToggleSr,
+			"RespVolumeInput"       => defaults.BotRespVolume,
+			"RespPlayPauseInput"    => defaults.BotRespPlayPause,
 			_                       => tb.Text,
 		};
 	}
@@ -445,7 +451,7 @@ if (int.TryParse(VoteSkipCountInput.Text,    out int vs))  c.VoteSkipCount      
 			"RespMaxReqInput", "RespQueueFullInput", "RespIsInQueueInput", "RespLevelTooLowInput",
 			"RespSongInput", "RespNextInput", "RespPosInput", "RespQueueInput",
 			"RespRemoveInput", "RespNoQueueInput", "RespSkipInput", "RespVoteSkipInput",
-			"RespSongLikeInput", "RespToggleSrInput",
+			"RespSongLikeInput", "RespToggleSrInput", "RespVolumeInput", "RespPlayPauseInput",
 		}) {
 			if (FindName(name) is TextBox tb) UpdateResponsePreview(tb);
 		}
@@ -466,7 +472,8 @@ if (int.TryParse(VoteSkipCountInput.Text,    out int vs))  c.VoteSkipCount      
 			.Replace("{cd}",        "30")
 			.Replace("{max}",       "5")
 			.Replace("{votes}",     "2")
-			.Replace("{needed}",    "5");
+			.Replace("{needed}",    "5")
+			.Replace("{vol}",    "67");
 
 	private void Cfg_CheckChanged(object sender, RoutedEventArgs e) {
 		if (!_configReady) return;

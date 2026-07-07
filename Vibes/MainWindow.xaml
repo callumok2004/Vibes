@@ -1062,6 +1062,20 @@
 										<TextBlock x:Name="RespToggleSrPreview" Margin="0,4,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" TextWrapping="Wrap" />
 									</StackPanel>
 								</Border>
+								<Border Margin="0,0,0,2" Padding="18,10" Background="#0E0E10" CornerRadius="4" Tag="volume response">
+									<StackPanel>
+										<Grid><TextBlock VerticalAlignment="Center" FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="Volume changed" /><Button HorizontalAlignment="Right" VerticalAlignment="Center" Content="Reset" Tag="RespVolumeInput" Click="ResetResponse_Click" Style="{StaticResource ActionBtn}" Padding="8,2" FontSize="11" /></Grid>
+										<TextBox x:Name="RespVolumeInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Resp_Changed" />
+										<TextBlock x:Name="RespVolumePreview" Margin="0,4,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" TextWrapping="Wrap" />
+									</StackPanel>
+								</Border>
+								<Border Margin="0,0,0,2" Padding="18,10" Background="#0E0E10" CornerRadius="4" Tag="play pause playback response">
+									<StackPanel>
+										<Grid><TextBlock VerticalAlignment="Center" FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="Play/pause toggled" /><Button HorizontalAlignment="Right" VerticalAlignment="Center" Content="Reset" Tag="RespPlayPauseInput" Click="ResetResponse_Click" Style="{StaticResource ActionBtn}" Padding="8,2" FontSize="11" /></Grid>
+										<TextBox x:Name="RespPlayPauseInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Resp_Changed" />
+										<TextBlock x:Name="RespPlayPausePreview" Margin="0,4,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" TextWrapping="Wrap" />
+									</StackPanel>
+								</Border>
 							</StackPanel>
 
 							<!-- COMMANDS -->

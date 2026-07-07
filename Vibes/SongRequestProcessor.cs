@@ -165,6 +165,24 @@ public class SongRequestProcessor
 				await ReplyAsync("Commands: " + string.Join(", ", triggers));
 				break;
 			}
+			case CommandType.Volume: {
+				if (!int.TryParse(args.Trim().TrimEnd('%'), out var vol)) {
+					await ReplyAsync(Format("@{user} Usage: set a volume 0-100.", user: user));
+					return;
+				}
+				vol = Math.Clamp(vol, 0, 100);
+				var ok = await SpotifyService.Instance.SetVolumeAsync(vol);
+				if (!ok) { await ReplyAsync(Format(cfg.BotRespError, user: user)); return; }
+				await ReplyAsync(Format(cfg.BotRespVolume, user: user, vol: vol));
+				break;
+			}
+			case CommandType.PlayPause: {
+				var playing = SpotifyService.Instance.CurrentTrack?.IsPlaying ?? false;
+				var ok = await SpotifyService.Instance.SetPlayingAsync(!playing);
+				if (!ok) { await ReplyAsync(Format(cfg.BotRespError, user: user)); return; }
+				await ReplyAsync(Format(cfg.BotRespPlayPause, user: user, state: !playing ? "playing" : "paused"));
+				break;
+			}
 		}
 	}
 
@@ -377,7 +395,7 @@ public class SongRequestProcessor
 	private static string Format(string template,
 		string user = "", string artist = "", string title = "", string queue = "",
 		string state = "", string level = "", string requester = "",
-		int pos = 0, int cd = 0, int max = 0, int ttp = 0, int votes = 0, int needed = 0) {
+		int pos = 0, int cd = 0, int max = 0, int ttp = 0, int votes = 0, int needed = 0, int vol = 0) {
 		return template
 			.Replace("{user}",      user)
 			.Replace("{artist}",    artist)
@@ -392,6 +410,7 @@ public class SongRequestProcessor
 			.Replace("{max}",       max.ToString())
 			.Replace("{ttp}",       ttp.ToString())
 			.Replace("{votes}",     votes.ToString())
-			.Replace("{needed}",    needed.ToString());
+			.Replace("{needed}",    needed.ToString())
+			.Replace("{vol}",       vol.ToString());
 	}
 }

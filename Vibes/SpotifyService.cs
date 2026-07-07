@@ -335,6 +335,43 @@ public class SpotifyService
 		}
 	}
 
+	public async Task<bool> SetVolumeAsync(int percent) {
+		try {
+			await EnsureTokenAsync();
+			var token = Credentials.Instance.SpotifyAccessToken;
+			if (string.IsNullOrEmpty(token)) return false;
+			percent = Math.Clamp(percent, 0, 100);
+			using var req = new HttpRequestMessage(HttpMethod.Put,
+				$"https://api.spotify.com/v1/me/player/volume?volume_percent={percent}");
+			req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+			var resp = await _http.SendAsync(req);
+			return resp.IsSuccessStatusCode || resp.StatusCode == HttpStatusCode.NoContent;
+		}
+		catch (Exception ex) {
+			AppLogger.Instance.Warning($"Spotify set volume: {ex.Message}");
+			return false;
+		}
+	}
+
+	public async Task<bool> SetPlayingAsync(bool play) {
+		try {
+			await EnsureTokenAsync();
+			var token = Credentials.Instance.SpotifyAccessToken;
+			if (string.IsNullOrEmpty(token)) return false;
+			using var req = new HttpRequestMessage(HttpMethod.Put,
+				play ? "https://api.spotify.com/v1/me/player/play"
+				     : "https://api.spotify.com/v1/me/player/pause");
+			req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+			var resp = await _http.SendAsync(req);
+			if (CurrentTrack != null) CurrentTrack.IsPlaying = play;
+			return resp.IsSuccessStatusCode || resp.StatusCode == HttpStatusCode.NoContent;
+		}
+		catch (Exception ex) {
+			AppLogger.Instance.Warning($"Spotify play/pause: {ex.Message}");
+			return false;
+		}
+	}
+
 	public async Task<List<SpotifyTrackInfo>> GetQueueAsync() {
 		var token = Credentials.Instance.SpotifyAccessToken;
 		if (string.IsNullOrEmpty(token)) return [];

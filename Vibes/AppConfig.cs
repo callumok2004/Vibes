@@ -65,7 +65,7 @@ public class AppConfig
 	];
 
 	// -- BOT RESPONSES ---------------------------------------------------------
-	// Placeholders: {user} {artist} {title} {song} {pos} {ttp} {cd} {max} {level} {votes} {needed} {state}
+	// Placeholders: {user} {artist} {title} {song} {pos} {ttp} {cd} {max} {level} {votes} {needed} {state} {vol}
 	public string BotRespSuccess { get; set; } = "@{user} - {artist} - {title} added to queue at #{pos}!";
 	public string BotRespError { get; set; } = "@{user} Something went wrong adding that song.";
 	public string BotRespNoSong { get; set; } = "@{user} No song found for that search.";
@@ -88,6 +88,8 @@ public class AppConfig
 	public string BotRespVoteSkip { get; set; } = "@{user} voted to skip! ({votes}/{needed})";
 	public string BotRespSongLike { get; set; } = "@{user} Added to liked songs!";
 	public string BotRespToggleSr { get; set; } = "Song requests are now {state}.";
+	public string BotRespVolume { get; set; } = "Volume set to {vol}%.";
+	public string BotRespPlayPause { get; set; } = "Playback is now {state}.";
 
 	// -- COMMANDS --------------------------------------------------------------
 	public List<TwitchCommand> Commands { get; set; } = TwitchCommand.Defaults();

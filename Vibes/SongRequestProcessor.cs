@@ -8,6 +8,7 @@ public class SongRequestProcessor
 
 	private DateTime _lastGlobalSr = DateTime.MinValue;
 	private readonly Dictionary<string, DateTime> _lastUserSr = new(StringComparer.OrdinalIgnoreCase);
+	private readonly Dictionary<CommandType, DateTime> _lastCommandUse = [];
 	private readonly HashSet<string> _voteSkipUsers = new(StringComparer.OrdinalIgnoreCase);
 
 	private SongRequestProcessor() { }
@@ -29,6 +30,12 @@ public class SongRequestProcessor
 
 			var level = GetUserLevel(msg);
 			if (!cmd.AllowedUserLevels.Contains((int)level)) return;
+
+			if (cmd.CooldownSeconds > 0 &&
+			    _lastCommandUse.TryGetValue(cmd.CommandType, out var lastUse) &&
+			    (DateTime.Now - lastUse).TotalSeconds < cmd.CooldownSeconds)
+				return;
+			_lastCommandUse[cmd.CommandType] = DateTime.Now;
 
 			var matchedTrigger = triggers.First(t =>
 				msg.Message.Equals(t, StringComparison.OrdinalIgnoreCase) ||

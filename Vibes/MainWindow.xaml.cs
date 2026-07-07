@@ -213,11 +213,12 @@ public partial class MainWindow : Window
 			CornerRadius = new CornerRadius(4)
 		};
 
-		// col0=toggle  col1=name  col2=trigger  col3=aliases
+		// col0=toggle  col1=name  col2=trigger  col3=cooldown  col4=aliases
 		var grid = new Grid();
 		grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(44) });
-		grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(160) });
+		grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(150) });
 		grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+		grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(70) });
 		grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
 		var toggle = new CheckBox { IsChecked = cmd.IsEnabled, VerticalAlignment = VerticalAlignment.Center };
@@ -237,6 +238,18 @@ public partial class MainWindow : Window
 		trigger.TextChanged += (_, _) => { cmd.Trigger = trigger.Text.Trim(); AppConfig.Save(); };
 		Grid.SetColumn(trigger, 2);
 
+		var cooldown = new TextBox {
+			Text = cmd.CooldownSeconds.ToString(),
+			Style = (Style)FindResource("SettingsInput"),
+			Margin = new Thickness(0, 0, 6, 0),
+			TextAlignment = TextAlignment.Center
+		};
+		cooldown.TextChanged += (_, _) => {
+			cmd.CooldownSeconds = int.TryParse(cooldown.Text.Trim(), out var s) ? Math.Max(0, s) : 0;
+			AppConfig.Save();
+		};
+		Grid.SetColumn(cooldown, 3);
+
 		// col3: tag-input style — border matching SettingsInput, chips inside, text input at end
 		var tagBorder = new Border {
 			Background  = new SolidColorBrush(Color.FromRgb(0x18, 0x18, 0x1B)),
@@ -247,7 +260,7 @@ public partial class MainWindow : Window
 			Margin = new Thickness(6, 0, 0, 0),
 			VerticalAlignment = VerticalAlignment.Stretch
 		};
-		Grid.SetColumn(tagBorder, 3);
+		Grid.SetColumn(tagBorder, 4);
 
 		// chips panel on the left, input stretches to fill the rest via DockPanel
 		StackPanel? chipsPanel = null;
@@ -325,6 +338,7 @@ public partial class MainWindow : Window
 		grid.Children.Add(toggle);
 		grid.Children.Add(label);
 		grid.Children.Add(trigger);
+		grid.Children.Add(cooldown);
 		grid.Children.Add(tagBorder);
 		border.Child = grid;
 		return border;

@@ -7,6 +7,7 @@ public class TwitchCommand
 	public string Trigger { get; set; } = "";
 	public List<string> Aliases { get; set; } = [];
 	public bool IsEnabled { get; set; } = true;
+	public int CooldownSeconds { get; set; } = 0;
 	public List<int> AllowedUserLevels { get; set; } = [0, 1, 2, 3, 4, 5, 6, 7];
 
 	public static List<TwitchCommand> Defaults() => [

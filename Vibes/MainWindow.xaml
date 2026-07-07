@@ -510,7 +510,7 @@
 										<TextBlock FontFamily="Segoe UI" FontSize="14" FontWeight="SemiBold" Foreground="#EFEFF1" Text="{Binding Title}" />
 										<TextBlock Margin="0,2,0,0" FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="{Binding Artist}" />
 									</StackPanel>
-									<Border Grid.Column="2" Padding="10,4" VerticalAlignment="Center" Background="#2D1B69" CornerRadius="10">
+									<Border Grid.Column="2" Padding="10,4" VerticalAlignment="Center" Background="#2D1B69" CornerRadius="10" Visibility="{Binding RequesterVisibility}">
 										<TextBlock FontFamily="Segoe UI" FontSize="11" Foreground="#9146FF" Text="{Binding Requester}" />
 									</Border>
 								</Grid>

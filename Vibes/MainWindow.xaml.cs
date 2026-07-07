@@ -18,6 +18,8 @@ public class QueueDisplayItem
 	public string Title { get; set; } = "";
 	public string Artist { get; set; } = "";
 	public string Requester { get; set; } = "";
+	public Visibility RequesterVisibility =>
+		string.IsNullOrEmpty(Requester) ? Visibility.Collapsed : Visibility.Visible;
 }
 
 public partial class MainWindow : Window

@@ -295,9 +295,12 @@ public class TwitchService
 			while (_botWs?.State == WebSocketState.Open && !ct.IsCancellationRequested) {
 				var result = await _botWs.ReceiveAsync(buffer, ct);
 				var text = Encoding.UTF8.GetString(buffer, 0, result.Count);
-				foreach (var line in text.Split('\n')) {
-					if (line.TrimEnd('\r').StartsWith("PING"))
+				foreach (var raw in text.Split('\n')) {
+					var line = raw.TrimEnd('\r');
+					if (line.StartsWith("PING"))
 						await SendRawAsync(_botWs, "PONG :tmi.twitch.tv");
+					else if (line.Contains(" NOTICE "))
+						AppLogger.Instance.Warning($"Twitch bot NOTICE: {line}");
 				}
 			}
 		}
@@ -340,7 +343,26 @@ public class TwitchService
 			rest = line[(sp + 1)..];
 		}
 
-		if (rest.Contains(" PRIVMSG ")) HandlePrivMsg(rest, tags);
+		if (rest.Contains(" 001 ")) {
+			AppLogger.Instance.Information("Twitch IRC authenticated (welcome received)");
+			return;
+		}
+
+		if (rest.Contains(" PRIVMSG ")) { HandlePrivMsg(rest, tags); return; }
+
+		if (rest.Contains(" NOTICE ")) {
+			var colon = rest.IndexOf(':', rest.IndexOf(" NOTICE ") + 8);
+			var text  = colon >= 0 ? rest[(colon + 1)..] : rest;
+			var msgId = tags.GetValueOrDefault("msg-id");
+			AppLogger.Instance.Warning(
+				$"Twitch NOTICE{(string.IsNullOrEmpty(msgId) ? "" : $" [{msgId}]")}: {text}");
+			return;
+		}
+
+		if (rest.StartsWith("RECONNECT") || rest.Contains(" RECONNECT")) {
+			AppLogger.Instance.Warning("Twitch sent RECONNECT - server is asking us to reconnect");
+			return;
+		}
 	}
 
 	private void HandlePrivMsg(string line, Dictionary<string, string> tags) {

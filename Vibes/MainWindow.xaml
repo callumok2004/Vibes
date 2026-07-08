@@ -831,13 +831,20 @@
 										<TextBox x:Name="SrCommandInput" Grid.Column="1" MaxWidth="140" HorizontalAlignment="Left" Style="{StaticResource SettingsInput}" Tag="!sr" TextChanged="Cfg_Changed" />
 									</Grid>
 								</Border>
-								<Border x:Name="RewardIdRow" Margin="0,0,0,2" Padding="18,12" Background="#0E0E10" CornerRadius="4" Tag="reward id channel points redemption">
+								<Border x:Name="RewardIdRow" Margin="0,0,0,2" Padding="18,12" Background="#0E0E10" CornerRadius="4" Tag="reward id channel points redemption create manage">
 									<Grid><Grid.ColumnDefinitions><ColumnDefinition Width="200" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
 										<StackPanel VerticalAlignment="Center">
 											<TextBlock FontFamily="Segoe UI" FontSize="13" Foreground="#EFEFF1" Text="Reward ID" />
 											<TextBlock Margin="0,2,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" Text="Leave blank to accept any reward" />
 										</StackPanel>
-										<TextBox x:Name="RewardIdInput" Grid.Column="1" Style="{StaticResource SettingsInput}" Tag="reward ID" TextChanged="Cfg_Changed" />
+										<StackPanel Grid.Column="1">
+											<TextBox x:Name="RewardIdInput" Style="{StaticResource SettingsInput}" Tag="reward ID" TextChanged="Cfg_Changed" />
+											<StackPanel Margin="0,8,0,0" Orientation="Horizontal">
+												<Button x:Name="CreateRewardBtn" Click="CreateReward_Click" Content="Create reward" Style="{StaticResource ActionBtn}" Padding="12,5" FontSize="12" />
+												<Button x:Name="EditRewardBtn" Margin="8,0,0,0" Click="EditReward_Click" Content="Edit reward" Style="{StaticResource ActionBtn}" Padding="12,5" FontSize="12" Background="#2D2D35" Visibility="Collapsed" />
+												<TextBlock x:Name="RewardStatusText" Margin="12,0,0,0" VerticalAlignment="Center" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" TextWrapping="Wrap" />
+											</StackPanel>
+										</StackPanel>
 									</Grid>
 								</Border>
 								<Border x:Name="AutoFulfillRow" Margin="0,0,0,2" Padding="18,12" Background="#0E0E10" CornerRadius="4" Tag="auto fulfill redemption channel points success">
@@ -1354,6 +1361,37 @@
 					</StackPanel>
 				</Grid>
 			</Border>
+
+			<!-- Create reward popup - -->
+			<Grid x:Name="RewardPopup" Grid.RowSpan="4" Background="#CC000000" Visibility="Collapsed" Panel.ZIndex="100">
+				<Border Width="420" HorizontalAlignment="Center" VerticalAlignment="Center" Background="#18181B" BorderBrush="#2D2D35" BorderThickness="1" CornerRadius="6">
+					<StackPanel Margin="24">
+						<TextBlock x:Name="RewardPopupTitle" FontFamily="Segoe UI" FontSize="16" FontWeight="Bold" Foreground="#EFEFF1" Text="Create channel point reward" />
+						<TextBlock Margin="0,4,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" TextWrapping="Wrap" Text="Vibes creates and owns this reward so it can auto fulfill/deny redemptions. Requires an Affiliate or Partner channel." />
+
+						<TextBlock Margin="0,18,0,4" FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="Reward name" />
+						<TextBox x:Name="RewardTitleInput" Style="{StaticResource SettingsInput}" Tag="Song Request" />
+
+						<TextBlock Margin="0,14,0,4" FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="Cost (channel points)" />
+						<TextBox x:Name="RewardCostInput" MaxWidth="140" HorizontalAlignment="Left" Style="{StaticResource SettingsInput}" Tag="500" />
+
+						<TextBlock Margin="0,14,0,4" FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="Prompt shown to viewers" />
+						<TextBox x:Name="RewardPromptInput" Style="{StaticResource SettingsInput}" Tag="Enter a song name or Spotify link" />
+
+						<StackPanel Margin="0,16,0,0" Orientation="Horizontal">
+							<CheckBox x:Name="RewardRequireInputCheck" VerticalAlignment="Center" IsChecked="True" />
+							<TextBlock Margin="10,0,0,0" VerticalAlignment="Center" FontFamily="Segoe UI" FontSize="12" Foreground="#EFEFF1" Text="Require viewers to enter text" />
+						</StackPanel>
+
+						<TextBlock x:Name="RewardPopupStatus" Margin="0,16,0,0" FontFamily="Segoe UI" FontSize="12" Foreground="#E06C5B" TextWrapping="Wrap" Visibility="Collapsed" />
+
+						<StackPanel Margin="0,20,0,0" HorizontalAlignment="Right" Orientation="Horizontal">
+							<Button x:Name="RewardPopupCancelBtn" Click="RewardPopupCancel_Click" Content="Cancel" Style="{StaticResource ActionBtn}" Padding="14,6" Background="#2D2D35" />
+							<Button x:Name="RewardPopupCreateBtn" Margin="8,0,0,0" Click="RewardPopupCreate_Click" Content="Create" Style="{StaticResource ActionBtn}" Padding="14,6" />
+						</StackPanel>
+					</StackPanel>
+				</Border>
+			</Grid>
 		</Grid>
 	</Border>
 </Window>

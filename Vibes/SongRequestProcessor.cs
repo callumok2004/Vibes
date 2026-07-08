@@ -207,13 +207,13 @@ public class SongRequestProcessor
 		async Task Refund(RefundCondition cond) {
 			if (!isReward || !cfg.AutoDenyOnFail || !cfg.RefundConditions.Contains(cond)) return;
 			AppLogger.Instance.Information($"Refunding redemption for {user}: {cond}");
-			await TwitchService.Instance.UpdateRedemptionAsync(msg.RewardId, msg.RedemptionId, fulfill: false);
+			await TwitchService.Instance.ManageRedemptionAsync(msg.RewardId, login, query, fulfill: false);
 		}
 
 		async Task Fulfill() {
 			if (!isReward || !cfg.AutoFulfillOnSuccess) return;
 			AppLogger.Instance.Information($"Fulfilling redemption for {user}");
-			await TwitchService.Instance.UpdateRedemptionAsync(msg.RewardId, msg.RedemptionId, fulfill: true);
+			await TwitchService.Instance.ManageRedemptionAsync(msg.RewardId, login, query, fulfill: true);
 		}
 
 		// Blocked user

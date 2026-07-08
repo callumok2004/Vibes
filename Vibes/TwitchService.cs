@@ -18,6 +18,26 @@ public class TwitchChatMessage
 	public Dictionary<string, string> Tags { get; set; } = [];
 }
 
+public class CustomReward
+{
+	public string Id        { get; set; } = "";
+	public string Title     { get; set; } = "";
+	public int    Cost      { get; set; }
+	public string Prompt    { get; set; } = "";
+	public bool   IsEnabled { get; set; }
+}
+
+// Result of a reward operation - carries a user-facing message and, on success, the reward.
+public class RewardResult
+{
+	public bool           Success { get; init; }
+	public string         Message { get; init; } = "";
+	public CustomReward?  Reward  { get; init; }
+
+	public static RewardResult Ok(CustomReward r, string msg)  => new() { Success = true,  Reward = r, Message = msg };
+	public static RewardResult Fail(string msg)                => new() { Success = false, Message = msg };
+}
+
 public class TwitchService
 {
 	public static TwitchService Instance { get; } = new();
@@ -205,6 +225,53 @@ public class TwitchService
 		}
 	}
 
+	// IRC only exposes the chat message id, never the redemption id, so we look the
+	// redemption up by reward + user (+ input) among the channel's UNFULFILLED redemptions.
+	public async Task ManageRedemptionAsync(string rewardId, string userLogin, string userInput, bool fulfill) {
+		if (string.IsNullOrEmpty(rewardId)) return;
+		var redemptionId = await FindUnfulfilledRedemptionIdAsync(rewardId, userLogin, userInput);
+		if (string.IsNullOrEmpty(redemptionId)) {
+			AppLogger.Instance.Warning(
+				$"Couldn't find an unfulfilled redemption for {userLogin} to {(fulfill ? "fulfill" : "refund")}. " +
+				"The reward must be one created/owned by Vibes.");
+			return;
+		}
+		await UpdateRedemptionAsync(rewardId, redemptionId, fulfill);
+	}
+
+	private async Task<string?> FindUnfulfilledRedemptionIdAsync(string rewardId, string userLogin, string userInput) {
+		try {
+			if (!IsAuthorized) return null;
+			var broadcasterId = BroadcasterIdOrThrow();
+			using var req = RewardRequest(HttpMethod.Get,
+				$"/redemptions?broadcaster_id={broadcasterId}&reward_id={rewardId}&status=UNFULFILLED&sort=NEWEST&first=50");
+			var resp = await _http.SendAsync(req);
+			if (!resp.IsSuccessStatusCode) {
+				AppLogger.Instance.Warning($"Fetch redemptions failed: {(int)resp.StatusCode} {resp.StatusCode}");
+				return null;
+			}
+			var json = JsonSerializer.Deserialize<JsonElement>(await resp.Content.ReadAsStringAsync());
+			if (!json.TryGetProperty("data", out var data)) return null;
+
+			string? newestForUser = null;
+			foreach (var e in data.EnumerateArray()) {
+				var login = e.TryGetProperty("user_login", out var ul) ? ul.GetString() ?? "" : "";
+				if (!login.Equals(userLogin, StringComparison.OrdinalIgnoreCase)) continue;
+				var input = e.TryGetProperty("user_input", out var ui) ? ui.GetString() ?? "" : "";
+				var id    = e.GetProperty("id").GetString();
+				// Exact input match wins; otherwise fall back to this user's newest redemption.
+				if (input.Trim().Equals(userInput.Trim(), StringComparison.OrdinalIgnoreCase))
+					return id;
+				newestForUser ??= id;   // list is NEWEST-first
+			}
+			return newestForUser;
+		}
+		catch (Exception ex) {
+			AppLogger.Instance.Warning($"Redemption lookup error: {ex.Message}");
+			return null;
+		}
+	}
+
 	public async Task UpdateRedemptionAsync(string rewardId, string redemptionId, bool fulfill) {
 		if (string.IsNullOrEmpty(rewardId) || string.IsNullOrEmpty(redemptionId)) return;
 		var broadcasterId = Credentials.Instance.TwitchBroadcasterId;
@@ -226,6 +293,134 @@ public class TwitchService
 		catch (Exception ex) {
 			AppLogger.Instance.Warning($"Redemption update error: {ex.Message}");
 		}
+	}
+
+	// -- Custom reward management ------------------------------------------------
+	// Twitch only lets an app manage rewards that IT created (matching Client-Id),
+	// and only on Affiliate/Partner channels.
+
+	private static HttpRequestMessage RewardRequest(HttpMethod method, string query) {
+		var req = new HttpRequestMessage(method,
+			$"https://api.twitch.tv/helix/channel_points/custom_rewards{query}");
+		req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", Credentials.Instance.TwitchAccessToken.Trim());
+		req.Headers.Add("Client-Id", ChannelClientId);
+		return req;
+	}
+
+	private static string BroadcasterIdOrThrow() {
+		var id = Credentials.Instance.TwitchBroadcasterId;
+		if (string.IsNullOrEmpty(id))
+			throw new InvalidOperationException("Broadcaster ID unknown - connect to Twitch first.");
+		return id;
+	}
+
+	private static CustomReward ParseReward(JsonElement e) => new() {
+		Id        = e.GetProperty("id").GetString() ?? "",
+		Title     = e.GetProperty("title").GetString() ?? "",
+		Cost      = e.TryGetProperty("cost", out var c) ? c.GetInt32() : 0,
+		Prompt    = e.TryGetProperty("prompt", out var p) ? (p.GetString() ?? "") : "",
+		IsEnabled = e.TryGetProperty("is_enabled", out var en) && en.GetBoolean(),
+	};
+
+	// Returns only rewards created by this app (the ones we can actually fulfil/cancel).
+	public async Task<List<CustomReward>> GetManageableRewardsAsync() {
+		var result = new List<CustomReward>();
+		if (!IsAuthorized) return result;
+		var broadcasterId = BroadcasterIdOrThrow();
+		using var req = RewardRequest(HttpMethod.Get,
+			$"?broadcaster_id={broadcasterId}&only_manageable_rewards=true");
+		var resp = await _http.SendAsync(req);
+		if (!resp.IsSuccessStatusCode) {
+			AppLogger.Instance.Warning($"Fetch rewards failed: {(int)resp.StatusCode} {resp.StatusCode}");
+			return result;
+		}
+		var json = JsonSerializer.Deserialize<JsonElement>(await resp.Content.ReadAsStringAsync());
+		if (json.TryGetProperty("data", out var data))
+			foreach (var e in data.EnumerateArray())
+				result.Add(ParseReward(e));
+		return result;
+	}
+
+	public async Task<RewardResult> CreateRewardAsync(string title, int cost, string prompt, bool requireInput) {
+		try {
+			if (!IsAuthorized) return RewardResult.Fail("Not authorized with Twitch.");
+			var broadcasterId = BroadcasterIdOrThrow();
+
+			// Avoid duplicates - adopt an existing manageable reward with the same title.
+			var existing = (await GetManageableRewardsAsync())
+				.FirstOrDefault(r => r.Title.Equals(title, StringComparison.OrdinalIgnoreCase));
+			if (existing != null)
+				return RewardResult.Ok(existing, $"A reward named \"{title}\" already exists - using it.");
+
+			using var req = RewardRequest(HttpMethod.Post, $"?broadcaster_id={broadcasterId}");
+			var payload = new {
+				title,
+				cost,
+				prompt,
+				is_user_input_required = requireInput,
+				is_enabled = true,
+			};
+			req.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+			var resp = await _http.SendAsync(req);
+			var body = await resp.Content.ReadAsStringAsync();
+			if (!resp.IsSuccessStatusCode) {
+				var msg = ExtractApiMessage(body);
+				if (resp.StatusCode == HttpStatusCode.Forbidden)
+					msg = "Twitch rejected this (403). Your channel must be Affiliate or Partner to create channel point rewards.";
+				AppLogger.Instance.Warning($"Create reward failed: {(int)resp.StatusCode} - {body}");
+				return RewardResult.Fail(msg);
+			}
+			var json   = JsonSerializer.Deserialize<JsonElement>(body);
+			var reward = ParseReward(json.GetProperty("data")[0]);
+			AppLogger.Instance.Information($"Created channel point reward \"{reward.Title}\" ({reward.Id})");
+			return RewardResult.Ok(reward, $"Created reward \"{reward.Title}\".");
+		}
+		catch (Exception ex) {
+			return RewardResult.Fail(ex.Message);
+		}
+	}
+
+	public async Task<RewardResult> UpdateRewardAsync(string rewardId, string title, int cost, string prompt, bool requireInput) {
+		try {
+			if (!IsAuthorized) return RewardResult.Fail("Not authorized with Twitch.");
+			if (string.IsNullOrEmpty(rewardId)) return RewardResult.Fail("No reward selected to edit.");
+			var broadcasterId = BroadcasterIdOrThrow();
+
+			using var req = RewardRequest(HttpMethod.Patch, $"?broadcaster_id={broadcasterId}&id={rewardId}");
+			var payload = new {
+				title,
+				cost,
+				prompt,
+				is_user_input_required = requireInput,
+			};
+			req.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+			var resp = await _http.SendAsync(req);
+			var body = await resp.Content.ReadAsStringAsync();
+			if (!resp.IsSuccessStatusCode) {
+				var msg = ExtractApiMessage(body);
+				if (resp.StatusCode == HttpStatusCode.Forbidden)
+					msg = "Twitch rejected this (403). This reward must have been created by Vibes to edit it.";
+				AppLogger.Instance.Warning($"Update reward failed: {(int)resp.StatusCode} - {body}");
+				return RewardResult.Fail(msg);
+			}
+			var json   = JsonSerializer.Deserialize<JsonElement>(body);
+			var reward = ParseReward(json.GetProperty("data")[0]);
+			AppLogger.Instance.Information($"Updated channel point reward \"{reward.Title}\" ({reward.Id})");
+			return RewardResult.Ok(reward, $"Updated reward \"{reward.Title}\".");
+		}
+		catch (Exception ex) {
+			return RewardResult.Fail(ex.Message);
+		}
+	}
+
+	private static string ExtractApiMessage(string body) {
+		try {
+			var json = JsonSerializer.Deserialize<JsonElement>(body);
+			if (json.TryGetProperty("message", out var m) && m.GetString() is { Length: > 0 } s)
+				return s;
+		}
+		catch { }
+		return string.IsNullOrWhiteSpace(body) ? "Unknown error." : body;
 	}
 
 	public void Disconnect() {

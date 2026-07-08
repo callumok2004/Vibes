@@ -132,6 +132,7 @@ public partial class MainWindow : Window
 		ModeReward.IsChecked  = c.RequestMode == RequestMode.ChannelReward;
 		ModeBoth.IsChecked    = c.RequestMode == RequestMode.Both;
 		UpdateRequestModeVisibility();
+		RefreshRewardStatus();
 
 		// User level
 		LevelViewer.IsChecked     = c.TwSrUserLevel == (int)TwitchUserLevel.Viewer;
@@ -357,6 +358,101 @@ public partial class MainWindow : Window
 		RewardIdRow.Visibility       = reward ? Visibility.Visible : Visibility.Collapsed;
 	}
 
+
+	// -- Channel point reward management ---------------------------------------
+
+	private CustomReward? _managedReward;   // the current reward if Vibes owns it
+	private string? _editingRewardId;       // non-null while the popup is editing
+
+	private void CreateReward_Click(object sender, RoutedEventArgs e) {
+		if (!TwitchService.Instance.IsAuthorized) {
+			MessageBox.Show("Connect to Twitch first, then create the reward.",
+				"Not connected", MessageBoxButton.OK, MessageBoxImage.Information);
+			return;
+		}
+		_editingRewardId = null;
+		RewardPopupTitle.Text          = "Create channel point reward";
+		RewardPopupCreateBtn.Content   = "Create";
+		RewardTitleInput.Text          = "Song Request";
+		RewardCostInput.Text           = "500";
+		RewardPromptInput.Text         = "Enter a song name or Spotify link";
+		RewardRequireInputCheck.IsChecked = true;
+		RewardPopupStatus.Visibility   = Visibility.Collapsed;
+		RewardPopup.Visibility         = Visibility.Visible;
+	}
+
+	private void EditReward_Click(object sender, RoutedEventArgs e) {
+		if (_managedReward == null) return;
+		_editingRewardId = _managedReward.Id;
+		RewardPopupTitle.Text          = "Edit channel point reward";
+		RewardPopupCreateBtn.Content   = "Save changes";
+		RewardTitleInput.Text          = _managedReward.Title;
+		RewardCostInput.Text           = _managedReward.Cost.ToString();
+		RewardPromptInput.Text         = _managedReward.Prompt;
+		RewardRequireInputCheck.IsChecked = !string.IsNullOrEmpty(_managedReward.Prompt);
+		RewardPopupStatus.Visibility   = Visibility.Collapsed;
+		RewardPopup.Visibility         = Visibility.Visible;
+	}
+
+	private void RewardPopupCancel_Click(object sender, RoutedEventArgs e) =>
+		RewardPopup.Visibility = Visibility.Collapsed;
+
+	private async void RewardPopupCreate_Click(object sender, RoutedEventArgs e) {
+		var title = RewardTitleInput.Text.Trim();
+		if (string.IsNullOrEmpty(title)) { ShowRewardPopupError("Enter a reward name."); return; }
+		if (!int.TryParse(RewardCostInput.Text.Trim(), out var cost) || cost < 1) {
+			ShowRewardPopupError("Cost must be a whole number of at least 1."); return;
+		}
+
+		RewardPopupCreateBtn.IsEnabled = false;
+		RewardPopupStatus.Visibility = Visibility.Collapsed;
+		var prompt       = RewardPromptInput.Text.Trim();
+		var requireInput = RewardRequireInputCheck.IsChecked == true;
+		var result = _editingRewardId != null
+			? await TwitchService.Instance.UpdateRewardAsync(_editingRewardId, title, cost, prompt, requireInput)
+			: await TwitchService.Instance.CreateRewardAsync(title, cost, prompt, requireInput);
+		RewardPopupCreateBtn.IsEnabled = true;
+
+		if (!result.Success || result.Reward == null) {
+			ShowRewardPopupError(result.Message);
+			return;
+		}
+
+		// Adopt the reward - this fires Cfg_Changed which persists TwRewardId
+		RewardIdInput.Text = result.Reward.Id;
+		RewardPopup.Visibility = Visibility.Collapsed;
+		RefreshRewardStatus();
+	}
+
+	private void ShowRewardPopupError(string msg) {
+		RewardPopupStatus.Text = msg;
+		RewardPopupStatus.Visibility = Visibility.Visible;
+	}
+
+	private async void RefreshRewardStatus() {
+		if (RewardStatusText == null) return;
+		_managedReward = null;
+		EditRewardBtn.Visibility = Visibility.Collapsed;
+		var id = AppConfig.Instance.TwRewardId.Trim();
+		if (string.IsNullOrEmpty(id) || !TwitchService.Instance.IsAuthorized) {
+			RewardStatusText.Text = "";
+			return;
+		}
+		try {
+			var rewards = await TwitchService.Instance.GetManageableRewardsAsync();
+			var match = rewards.FirstOrDefault(r => r.Id == id);
+			if (match != null) {
+				_managedReward = match;
+				EditRewardBtn.Visibility = Visibility.Visible;
+				RewardStatusText.Foreground = new SolidColorBrush(Color.FromRgb(0x57, 0xA6, 0x4A));
+				RewardStatusText.Text = $"✓ Managed by Vibes: \"{match.Title}\" ({match.Cost} pts)";
+			} else {
+				RewardStatusText.Foreground = new SolidColorBrush(Color.FromRgb(0x4A, 0x4A, 0x55));
+				RewardStatusText.Text = "This reward isn't managed by Vibes - auto fulfill/deny won't work.";
+			}
+		}
+		catch { /* non-fatal status check */ }
+	}
 
 	// -- Generic config change handlers ---------------------------------------
 

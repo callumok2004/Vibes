@@ -218,8 +218,10 @@ public class TwitchService
 			req.Headers.Add("Client-Id", ChannelClientId);
 			req.Content = new StringContent($"{{\"status\":\"{status}\"}}", Encoding.UTF8, "application/json");
 			var resp = await _http.SendAsync(req);
-			if (!resp.IsSuccessStatusCode)
-				AppLogger.Instance.Warning($"Redemption update failed ({status}): {resp.StatusCode}");
+			if (!resp.IsSuccessStatusCode) {
+				var body = await resp.Content.ReadAsStringAsync();
+				AppLogger.Instance.Warning($"Redemption update failed ({status}): {(int)resp.StatusCode} {resp.StatusCode} - {body}");
+			}
 		}
 		catch (Exception ex) {
 			AppLogger.Instance.Warning($"Redemption update error: {ex.Message}");

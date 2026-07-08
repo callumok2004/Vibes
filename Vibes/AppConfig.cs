@@ -48,7 +48,8 @@ public class AppConfig
 	// Vote skip threshold
 	public int VoteSkipCount { get; set; } = 5;
 
-	public bool AutoManageRedemptions { get; set; } = true;
+	public bool AutoFulfillOnSuccess { get; set; } = false;
+	public bool AutoDenyOnFail       { get; set; } = false;
 
 	// Refund channel points on these conditions
 	public List<RefundCondition> RefundConditions { get; set; } = [
@@ -113,7 +114,7 @@ public class AppConfig
 	// -- APP SETTINGS ----------------------------------------------------------
 	public bool StartWithWindows { get; set; } = false;
 	public bool MinimizeToTray { get; set; } = true;
-	public bool TrackStats { get; set; } = false;
+	public bool TrackStats { get; set; } = true;
 
 	// -------------------------------------------------------------------------
 

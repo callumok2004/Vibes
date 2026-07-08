@@ -422,14 +422,14 @@
 
 			<!-- Tab bar - -->
 			<Border Grid.Row="1" Background="#0E0E10" BorderBrush="#2D2D35" BorderThickness="0,0,0,1">
-				<StackPanel Orientation="Horizontal">
-					<RadioButton x:Name="TabMain"   Checked="Tab_Checked" Content="NOW PLAYING" IsChecked="True" Style="{StaticResource TabBtn}" />
-					<RadioButton x:Name="TabQueue"  Checked="Tab_Checked" Content="QUEUE"        Style="{StaticResource TabBtn}" />
-					<RadioButton x:Name="TabStats"  Checked="Tab_Checked" Content="STATS"        Style="{StaticResource TabBtn}" />
-					<RadioButton x:Name="TabLogs"   Checked="Tab_Checked" Content="LOGS"         Style="{StaticResource TabBtn}" />
-					<RadioButton x:Name="TabConfig" Checked="Tab_Checked" Content="CONFIG"       Style="{StaticResource TabBtn}" />
-					<RadioButton x:Name="TabGuide"  Checked="Tab_Checked" Content="SETUP GUIDE"  Style="{StaticResource TabBtn}" />
-				</StackPanel>
+				<DockPanel LastChildFill="False">
+					<RadioButton x:Name="TabMain"   DockPanel.Dock="Left"  Checked="Tab_Checked" Content="🎵  NOW PLAYING" IsChecked="True" Style="{StaticResource TabBtn}" />
+					<RadioButton x:Name="TabQueue"  DockPanel.Dock="Left"  Checked="Tab_Checked" Content="🎧  REQUESTS"    Style="{StaticResource TabBtn}" />
+					<RadioButton x:Name="TabStats"  DockPanel.Dock="Left"  Checked="Tab_Checked" Content="📊  STATS"       Style="{StaticResource TabBtn}" />
+					<RadioButton x:Name="TabGuide"  DockPanel.Dock="Right" Checked="Tab_Checked" Content="📖" FontSize="15" Style="{StaticResource TabBtn}" ToolTip="Setup guide" />
+					<RadioButton x:Name="TabConfig" DockPanel.Dock="Right" Checked="Tab_Checked" Content="⚙️" FontSize="15" Style="{StaticResource TabBtn}" ToolTip="Config" />
+					<RadioButton x:Name="TabLogs"   DockPanel.Dock="Right" Checked="Tab_Checked" Content="📄" FontSize="15" Style="{StaticResource TabBtn}" ToolTip="Logs" />
+				</DockPanel>
 			</Border>
 
 			<!-- Content - -->
@@ -474,7 +474,11 @@
 					<Border Grid.Row="0" Padding="16,12" Background="#0E0E10" BorderBrush="#2D2D35" BorderThickness="0,0,0,1">
 						<Grid>
 							<TextBlock VerticalAlignment="Center" FontFamily="Segoe UI" FontSize="12" FontWeight="SemiBold" Foreground="#ADADB8" Text="UPCOMING SONGS" />
-							<TextBlock x:Name="QueueCountText" HorizontalAlignment="Right" VerticalAlignment="Center" FontFamily="Segoe UI" FontSize="12" Foreground="#4A4A55" />
+							<StackPanel HorizontalAlignment="Right" VerticalAlignment="Center" Orientation="Horizontal">
+								<TextBlock VerticalAlignment="Center" Margin="0,0,8,0" FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="Requests only" />
+								<CheckBox x:Name="RequestsOnlyToggle" VerticalAlignment="Center" IsChecked="True" Checked="RequestsOnly_Changed" Unchecked="RequestsOnly_Changed" ToolTip="Hide songs that weren't requested by viewers" />
+								<TextBlock x:Name="QueueCountText" Margin="16,0,0,0" VerticalAlignment="Center" FontFamily="Segoe UI" FontSize="12" Foreground="#4A4A55" />
+							</StackPanel>
 						</Grid>
 					</Border>
 					<ListBox x:Name="QueueListBox" Grid.Row="1" Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.ScrollUnit="Pixel">
@@ -579,7 +583,12 @@
 							</StackPanel>
 						</Grid>
 					</Border>
-					<ListBox x:Name="LogList" Grid.Row="1" Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.ScrollUnit="Pixel">
+					<ListBox x:Name="LogList" Grid.Row="1" Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.ScrollUnit="Pixel" MouseDoubleClick="LogCopy_Click">
+						<ListBox.ContextMenu>
+							<ContextMenu>
+								<MenuItem Header="Copy" Click="LogCopy_Click" />
+							</ContextMenu>
+						</ListBox.ContextMenu>
 						<ListBox.ItemContainerStyle>
 							<Style TargetType="ListBoxItem">
 								<Setter Property="HorizontalContentAlignment" Value="Stretch" />
@@ -831,13 +840,22 @@
 										<TextBox x:Name="RewardIdInput" Grid.Column="1" Style="{StaticResource SettingsInput}" Tag="reward ID" TextChanged="Cfg_Changed" />
 									</Grid>
 								</Border>
-								<Border x:Name="AutoManageRow" Margin="0,0,0,2" Padding="18,12" Background="#0E0E10" CornerRadius="4" Tag="auto fulfill refund redemption channel points">
+								<Border x:Name="AutoFulfillRow" Margin="0,0,0,2" Padding="18,12" Background="#0E0E10" CornerRadius="4" Tag="auto fulfill redemption channel points success">
 									<Grid><Grid.ColumnDefinitions><ColumnDefinition Width="200" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
 										<StackPanel VerticalAlignment="Center">
-											<TextBlock FontFamily="Segoe UI" FontSize="13" Foreground="#EFEFF1" Text="Auto manage redemptions" />
-											<TextBlock Margin="0,2,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" Text="Auto fulfill on success, refund on failure" />
+											<TextBlock FontFamily="Segoe UI" FontSize="13" Foreground="#EFEFF1" Text="Auto fulfill on success" />
+											<TextBlock Margin="0,2,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" Text="Mark the redemption fulfilled when the song is queued" />
 										</StackPanel>
-										<CheckBox x:Name="AutoManageCheck" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Left" Checked="Cfg_CheckChanged" Unchecked="Cfg_CheckChanged" />
+										<CheckBox x:Name="AutoFulfillCheck" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Left" Checked="Cfg_CheckChanged" Unchecked="Cfg_CheckChanged" />
+									</Grid>
+								</Border>
+								<Border x:Name="AutoDenyRow" Margin="0,0,0,2" Padding="18,12" Background="#0E0E10" CornerRadius="4" Tag="auto deny refund redemption channel points failure">
+									<Grid><Grid.ColumnDefinitions><ColumnDefinition Width="200" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+										<StackPanel VerticalAlignment="Center">
+											<TextBlock FontFamily="Segoe UI" FontSize="13" Foreground="#EFEFF1" Text="Auto deny on fail" />
+											<TextBlock Margin="0,2,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" Text="Refund the redemption when the request is rejected" />
+										</StackPanel>
+										<CheckBox x:Name="AutoDenyCheck" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Left" Checked="Cfg_CheckChanged" Unchecked="Cfg_CheckChanged" />
 									</Grid>
 								</Border>
 								<Border Margin="0,0,0,2" Padding="18,12" Background="#0E0E10" CornerRadius="4" Tag="min user level viewer follower subscriber moderator">

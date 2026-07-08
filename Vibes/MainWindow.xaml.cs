@@ -125,7 +125,8 @@ public partial class MainWindow : Window
 		ModeBoth.IsChecked    = c.RequestMode == RequestMode.Both;
 		SrCommandInput.Text   = c.TwSrCommandTrigger;
 		RewardIdInput.Text    = c.TwRewardId;
-		AutoManageCheck.IsChecked = c.AutoManageRedemptions;
+		AutoFulfillCheck.IsChecked = c.AutoFulfillOnSuccess;
+		AutoDenyCheck.IsChecked    = c.AutoDenyOnFail;
 
 		ModeCommand.IsChecked = c.RequestMode == RequestMode.ChatCommand;
 		ModeReward.IsChecked  = c.RequestMode == RequestMode.ChannelReward;
@@ -379,8 +380,7 @@ public partial class MainWindow : Window
 		if (int.TryParse(PerUserCooldownInput.Text,  out int pcd)) c.TwSrPerUserCooldown   = Math.Max(0, pcd);
 		if (int.TryParse(MaxSongLengthInput.Text,    out int msl)) c.MaxSongLength         = Math.Max(0, msl);
 		if (int.TryParse(MaxQueueInput.Text,         out int mq))  c.MaxQueueLength        = Math.Max(0, mq);
-if (int.TryParse(VoteSkipCountInput.Text,    out int vs))  c.VoteSkipCount         = Math.Max(1, vs);
-
+		if (int.TryParse(VoteSkipCountInput.Text,    out int vs))  c.VoteSkipCount         = Math.Max(1, vs);
 		if (int.TryParse(MaxReqViewer.Text,      out int v))  c.TwSrMaxReqViewer      = Math.Max(0, v);
 		if (int.TryParse(MaxReqFollower.Text,    out int f))  c.TwSrMaxReqFollower    = Math.Max(0, f);
 		if (int.TryParse(MaxReqSub.Text,         out int s))  c.TwSrMaxReqSubscriber  = Math.Max(0, s);
@@ -504,7 +504,8 @@ if (int.TryParse(VoteSkipCountInput.Text,    out int vs))  c.VoteSkipCount      
 		c.AddSrToPlaylist     = AddToPlaylistCheck.IsChecked    == true;
 		c.LimitSrToPlaylist   = LimitToPlaylistCheck.IsChecked  == true;
 		c.BlockAllExplicitSongs   = BlockExplicitCheck.IsChecked   == true;
-		c.AutoManageRedemptions   = AutoManageCheck.IsChecked      == true;
+		c.AutoFulfillOnSuccess    = AutoFulfillCheck.IsChecked     == true;
+		c.AutoDenyOnFail          = AutoDenyCheck.IsChecked        == true;
 
 		c.StartWithWindows        = StartWithWindowsCheck.IsChecked == true;
 		c.MinimizeToTray          = MinimizeToTrayCheck.IsChecked   == true;
@@ -744,6 +745,11 @@ if (int.TryParse(VoteSkipCountInput.Text,    out int vs))  c.VoteSkipCount      
 		Clipboard.SetText(sb.ToString());
 	}
 
+	private void LogCopy_Click(object sender, RoutedEventArgs e) {
+		if (LogList.SelectedItem is not LogEntry entry) return;
+		Clipboard.SetText($"{entry.Timestamp:HH:mm:ss.ff} [{entry.LevelShort}] {entry.Message}");
+	}
+
 	private bool LogFilter(object obj) {
 		if (obj is not LogEntry entry) return false;
 		bool levelOk = entry.Level switch {
@@ -830,19 +836,33 @@ if (int.TryParse(VoteSkipCountInput.Text,    out int vs))  c.VoteSkipCount      
 		}
 	}
 
+	private List<SpotifyTrackInfo> _lastQueue = [];
+
 	private void OnQueueChanged(List<SpotifyTrackInfo> queue) {
 		Dispatcher.Invoke(() => {
-			var items = queue.Select((t, i) => new QueueDisplayItem {
+			_lastQueue = queue;
+			RenderQueue();
+		});
+	}
+
+	private void RenderQueue() {
+		if (QueueListBox == null) return;
+		bool requestsOnly = RequestsOnlyToggle?.IsChecked == true;
+		var items = _lastQueue
+			.Select((t, i) => new QueueDisplayItem {
 				Position  = $"#{i + 1}",
 				Title     = t.Title,
 				Artist    = t.Artist,
 				Requester = SongQueue.GetRequester(t.TrackId) ?? "",
-			}).ToList();
+			})
+			.Where(item => !requestsOnly || !string.IsNullOrEmpty(item.Requester))
+			.ToList();
 
-			QueueListBox.ItemsSource = items;
-			QueueCountText.Text = items.Count > 0 ? $"{items.Count} track{(items.Count == 1 ? "" : "s")}" : "";
-		});
+		QueueListBox.ItemsSource = items;
+		QueueCountText.Text = items.Count > 0 ? $"{items.Count} track{(items.Count == 1 ? "" : "s")}" : "";
 	}
+
+	private void RequestsOnly_Changed(object sender, RoutedEventArgs e) => RenderQueue();
 
 	private string? _lastPlayedTrackId;
 

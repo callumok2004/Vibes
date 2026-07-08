@@ -127,6 +127,8 @@ public class CloudflareService
 			? SongQueue.Pending.FirstOrDefault(r => r.TrackId == track.TrackId)?.Requester ?? ""
 			: "";
 
+		var stats = AppConfig.Instance.TrackStats ? BuildStatsPayload() : null;
+
 		var payload = new {
 			nowPlaying = track == null ? null : new {
 				title     = track.Title,
@@ -143,6 +145,7 @@ public class CloudflareService
 				trackId   = r.TrackId,
 				requester = r.Requester,
 			}).ToArray(),
+			stats,
 		};
 
 		var json = JsonSerializer.Serialize(payload);
@@ -155,6 +158,19 @@ public class CloudflareService
 		var resp = await _http.SendAsync(req);
 		if (!resp.IsSuccessStatusCode)
 			AppLogger.Instance.Warning($"Queue push failed: {resp.StatusCode}");
+	}
+
+	private static object BuildStatsPayload() {
+		var s = RequestStats.Instance;
+		return new {
+			total = s.TotalRequests,
+			topSongs = s.TopSongs(5).Select(x => new {
+				title = x.Title, artist = x.Artist, count = x.Count, trackId = x.TrackId,
+			}).ToArray(),
+			topRequesters = s.TopRequesters(5).Select(x => new {
+				name = x.Name, count = x.Count,
+			}).ToArray(),
+		};
 	}
 
 	// -- Analytics -------------------------------------------------------------
@@ -276,7 +292,7 @@ function renderPage(data) {
 <title>${esc(channel ? channel + "'s Queue" : 'Queue')} - Vibes</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',sans-serif;background:#0e0e10;color:#efeff1;padding:32px 24px;max-width:640px;margin:0 auto}
+body{font-family:'Segoe UI',sans-serif;background:#0e0e10;color:#efeff1;padding:32px 24px;max-width:940px;margin:0 auto}
 h1{font-size:22px;font-weight:700;margin-bottom:2px}
 .sub{font-size:12px;color:#4a4a55;margin-bottom:28px}
 .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#4a4a55;margin-right:6px;vertical-align:middle;transition:background .3s}
@@ -297,18 +313,40 @@ h1{font-size:22px;font-weight:700;margin-bottom:2px}
 .queue-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 .now-playing, .song {transition: all 0.2s ease;}
 .song {border: 1px solid rgba(255, 255, 255, .0)}
-.now-playing:hover, .song:hover {transform:scale(1.1);cursor: pointer;}
-.song:hover {border: 1px solid rgba(255, 255, 255, .1);}
+@media(hover:hover){
+  .now-playing:hover, .song:hover {transform:scale(1.02);cursor: pointer;}
+  .song:hover {border: 1px solid rgba(255, 255, 255, .1);}
+}
 .now-playing,.song,.now-playing:visited,.song:visited,.now-playing:hover,.song:hover,.now-playing:active,.song:active{color:inherit;text-decoration:none}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:32px;align-items:start}
+@media(max-width:720px){.layout{grid-template-columns:minmax(0,1fr)}}
+.col-main,.col-side{min-width:0}
+.stat-group{margin-bottom:22px}
+.stat-group .section-label{margin-top:0}
+.stats-total{font-size:11px;color:#4a4a55;margin:-2px 0 14px}
+.stat-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #1f1f23}
+.stat-row:last-child{border-bottom:none}
+.stat-rank{font-size:11px;color:#4a4a55;width:16px;flex-shrink:0;text-align:right}
+.stat-name{flex:1;min-width:0}
+.stat-title{font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stat-sub{font-size:11px;color:#4a4a55;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px}
+.stat-count{font-size:12px;color:#9146ff;font-weight:600;flex-shrink:0}
+a.stat-row,a.stat-row:visited,a.stat-row:hover,a.stat-row:active{color:inherit;text-decoration:none}
+a.stat-row:hover .stat-title{color:#9146ff}
 </style>
 </head><body>
 <h1 id="title">${esc(channel ? channel + "'s Queue" : 'Queue')}</h1>
 <div class="sub"><span class="dot" id="dot"></span><span id="status">Connecting…</span></div>
-<div id="np"></div>
-<div class="queue-header">
-  <div class="section-label" id="qlabel">Queue</div>
+<div class="layout">
+  <div class="col-main">
+    <div id="np"></div>
+    <div class="queue-header">
+      <div class="section-label" id="qlabel">Queue</div>
+    </div>
+    <div id="qlist"></div>
+  </div>
+  <aside class="col-side" id="stats"></aside>
 </div>
-<div id="qlist"></div>
 <script>
 function esc(s){return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 const INTERVAL = 10;
@@ -358,6 +396,36 @@ function render(d) {
         <div class="song-meta">\${esc(item.artist)}\${item.requester ? \` <span class="req">• \${esc(item.requester)}</span>\` : ''}</div>
       </div>
     </a>\`).join('') : '<div class="empty">The queue is empty.</div>';
+  renderStats(d.stats);
+}
+function renderStats(s) {
+  const el = document.getElementById('stats');
+  if (!s || !s.total) { el.innerHTML = ''; return; }
+  const songs = (s.topSongs ?? []).map((x, i) => \`
+    <a class="stat-row" href="\${esc(x.trackId ? 'https://open.spotify.com/track/' + x.trackId : '#')}" target="_blank" rel="noopener noreferrer">
+      <span class="stat-rank">\${i + 1}</span>
+      <div class="stat-name">
+        <div class="stat-title">\${esc(x.title)}</div>
+        <div class="stat-sub">\${esc(x.artist)}</div>
+      </div>
+      <span class="stat-count">\${x.count}×</span>
+    </a>\`).join('');
+  const users = (s.topRequesters ?? []).map((x, i) => \`
+    <div class="stat-row">
+      <span class="stat-rank">\${i + 1}</span>
+      <div class="stat-name"><div class="stat-title">\${esc(x.name)}</div></div>
+      <span class="stat-count">\${x.count}×</span>
+    </div>\`).join('');
+  el.innerHTML = \`
+    <div class="stats-total">\${s.total} total request\${s.total === 1 ? '' : 's'}</div>
+    <div class="stat-group">
+      <div class="section-label">Top songs</div>
+      \${songs || '<div class="empty">No data yet.</div>'}
+    </div>
+    <div class="stat-group">
+      <div class="section-label">Top requesters</div>
+      \${users || '<div class="empty">No data yet.</div>'}
+    </div>\`;
 }
 poll();
 setInterval(poll, 10000);

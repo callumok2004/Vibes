@@ -132,6 +132,7 @@ public class CloudflareService
 				title     = track.Title,
 				artist    = track.Artist,
 				albumArt  = track.AlbumArt,
+				trackId   = track.TrackId,
 				requester,
 			},
 			queue = pending.Select((r, i) => new {
@@ -139,6 +140,7 @@ public class CloudflareService
 				title     = r.Title,
 				artist    = r.Artist,
 				albumArt  = r.AlbumCover,
+				trackId   = r.TrackId,
 				requester = r.Requester,
 			}).ToArray(),
 		};
@@ -293,6 +295,11 @@ h1{font-size:22px;font-weight:700;margin-bottom:2px}
 .song-meta{font-size:11px;color:#4a4a55;margin-top:2px}
 .empty{color:#4a4a55;font-size:13px;padding:12px 0}
 .queue-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.now-playing, .song {transition: all 0.2s ease;}
+.song {border: 1px solid rgba(255, 255, 255, .0)}
+.now-playing:hover, .song:hover {transform:scale(1.1);cursor: pointer;}
+.song:hover {border: 1px solid rgba(255, 255, 255, .1);}
+.now-playing,.song,.now-playing:visited,.song:visited,.now-playing:hover,.song:hover,.now-playing:active,.song:active{color:inherit;text-decoration:none}
 </style>
 </head><body>
 <h1 id="title">${esc(channel ? channel + "'s Queue" : 'Queue')}</h1>
@@ -335,22 +342,22 @@ function render(d) {
   }
   document.getElementById('np').innerHTML = np ? \`
     <div class="section-label">Now Playing</div>
-    <div class="now-playing">
+    <a class="now-playing" href="\${esc(np.trackId ? 'https://open.spotify.com/track/' + np.trackId : '#')}" target="_blank" rel="noopener noreferrer">
       \${np.albumArt ? \`<img class="np-art" src="\${esc(np.albumArt)}" alt="">\` : ''}
       <div class="np-info">
         <div class="np-title">\${esc(np.title)}</div>
         <div class="np-meta">\${esc(np.artist)}\${np.requester ? \` <span class="req">• requested by \${esc(np.requester)}</span>\` : ''}</div>
       </div>
-    </div>\` : '';
+    </a>\` : '';
   document.getElementById('qlabel').textContent = \`Queue (\${q.length})\`;
   document.getElementById('qlist').innerHTML = q.length ? q.map(item => \`
-    <div class="song">
+    <a class="song" href="\${esc(item.trackId ? 'https://open.spotify.com/track/' + item.trackId : '#')}" target="_blank" rel="noopener noreferrer">
       \${item.albumArt ? \`<img class="song-art" src="\${esc(item.albumArt)}" alt="">\` : \`<span class="pos">#\${item.pos}</span>\`}
       <div class="info">
         <div class="song-title">\${esc(item.title)}</div>
         <div class="song-meta">\${esc(item.artist)}\${item.requester ? \` <span class="req">• \${esc(item.requester)}</span>\` : ''}</div>
       </div>
-    </div>\`).join('') : '<div class="empty">The queue is empty.</div>';
+    </a>\`).join('') : '<div class="empty">The queue is empty.</div>';
 }
 poll();
 setInterval(poll, 10000);

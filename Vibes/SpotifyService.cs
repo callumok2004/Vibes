@@ -232,7 +232,10 @@ public class SpotifyService
 				$"https://api.spotify.com/v1/tracks/{Uri.EscapeDataString(trackId)}");
 			req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 			var resp = await _http.SendAsync(req);
-			if (!resp.IsSuccessStatusCode) return null;
+			if (!resp.IsSuccessStatusCode) {
+				AppLogger.Instance.Warning($"Spotify get track failed: {(int)resp.StatusCode} {resp.StatusCode} - {await resp.Content.ReadAsStringAsync()}");
+				return null;
+			}
 
 			var json    = JsonSerializer.Deserialize<JsonElement>(await resp.Content.ReadAsStringAsync());
 			var artists = json.GetProperty("artists").EnumerateArray()
@@ -262,7 +265,10 @@ public class SpotifyService
 				$"https://api.spotify.com/v1/search?q={Uri.EscapeDataString(query)}&type=track&limit=1");
 			req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 			var resp = await _http.SendAsync(req);
-			if (!resp.IsSuccessStatusCode) return null;
+			if (!resp.IsSuccessStatusCode) {
+				AppLogger.Instance.Warning($"Spotify search failed: {(int)resp.StatusCode} {resp.StatusCode} - {await resp.Content.ReadAsStringAsync()}");
+				return null;
+			}
 
 			var json = JsonSerializer.Deserialize<JsonElement>(await resp.Content.ReadAsStringAsync());
 			if (!json.TryGetProperty("tracks", out var tracks)) return null;
@@ -296,7 +302,11 @@ public class SpotifyService
 				$"https://api.spotify.com/v1/me/player/queue?uri=spotify%3Atrack%3A{trackId}");
 			req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 			var resp = await _http.SendAsync(req);
-			return resp.IsSuccessStatusCode || resp.StatusCode == System.Net.HttpStatusCode.NoContent;
+			if (resp.IsSuccessStatusCode || resp.StatusCode == System.Net.HttpStatusCode.NoContent)
+				return true;
+			var body = await resp.Content.ReadAsStringAsync();
+			AppLogger.Instance.Warning($"Spotify add to queue failed: {(int)resp.StatusCode} {resp.StatusCode} - {body}");
+			return false;
 		}
 		catch (Exception ex) {
 			AppLogger.Instance.Warning($"Spotify add to queue: {ex.Message}");

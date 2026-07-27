@@ -34,6 +34,8 @@ public class AppConfig
 	public int MaxSongLength { get; set; } = 10;
 	public int MaxQueueLength { get; set; } = 0;
 	public bool BlockAllExplicitSongs { get; set; } = false;
+	// Drop tracked requests when they disappear from the Spotify queue (e.g. removed directly in Spotify)
+	public bool PruneRemovedFromSpotify { get; set; } = true;
 
 	// Per user-level max requests (0 = unlimited)
 	public int TwSrMaxReqViewer { get; set; } = 3;

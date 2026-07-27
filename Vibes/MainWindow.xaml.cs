@@ -147,6 +147,7 @@ public partial class MainWindow : Window
 		MaxSongLengthInput.Text   = c.MaxSongLength.ToString();
 		MaxQueueInput.Text        = c.MaxQueueLength.ToString();
 		BlockExplicitCheck.IsChecked = c.BlockAllExplicitSongs;
+		PruneRemovedCheck.IsChecked  = c.PruneRemovedFromSpotify;
 
 		VoteSkipCountInput.Text   = c.VoteSkipCount.ToString();
 
@@ -600,6 +601,7 @@ public partial class MainWindow : Window
 		c.AddSrToPlaylist     = AddToPlaylistCheck.IsChecked    == true;
 		c.LimitSrToPlaylist   = LimitToPlaylistCheck.IsChecked  == true;
 		c.BlockAllExplicitSongs   = BlockExplicitCheck.IsChecked   == true;
+		c.PruneRemovedFromSpotify = PruneRemovedCheck.IsChecked    == true;
 		c.AutoFulfillOnSuccess    = AutoFulfillCheck.IsChecked     == true;
 		c.AutoDenyOnFail          = AutoDenyCheck.IsChecked        == true;
 

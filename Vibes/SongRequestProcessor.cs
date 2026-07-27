@@ -332,7 +332,7 @@ public class SongRequestProcessor
 			return;
 		}
 
-		SongQueue.Pending.Add(new RequestObject {
+		SongQueue.Add(new RequestObject {
 			TrackId     = track.TrackId,
 			Title       = track.Title,
 			Artist      = track.Artist,

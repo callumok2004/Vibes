@@ -33,11 +33,61 @@ public static class SongQueue
 	// Matched against Spotify's queue by TrackId to show requester badges.
 	public static List<RequestObject> Pending { get; } = [];
 
-	public static string? GetRequester(string trackId) =>
-		Pending.FirstOrDefault(r => r.TrackId == trackId)?.Requester;
+	private static readonly Lock _lock = new();
+	private static readonly Dictionary<string, int> _missStrikes = [];
 
-	public static void MarkPlayed(string trackId) =>
-		Pending.RemoveAll(r => r.TrackId == trackId);
+	// Spotify's queue endpoint only returns a limited upcoming horizon; if the
+	// snapshot is at least this long, a missing track may just be beyond it.
+	private const int SpotifyQueueHorizon = 20;
+	private const int MissesBeforeDrop = 2;
+	// Never prune a request younger than this - Spotify's queue can lag a few
+	// seconds behind a song we just added.
+	private const int GraceSeconds = 20;
+
+	public static void Add(RequestObject request) {
+		lock (_lock) {
+			Pending.Add(request);
+			_missStrikes.Remove(request.TrackId);
+		}
+	}
+
+	public static string? GetRequester(string trackId) {
+		lock (_lock)
+			return Pending.FirstOrDefault(r => r.TrackId == trackId)?.Requester;
+	}
+
+	public static void MarkPlayed(string trackId) {
+		lock (_lock) {
+			Pending.RemoveAll(r => r.TrackId == trackId);
+			_missStrikes.Remove(trackId);
+		}
+	}
+
+	// Drop pending requests that are no longer in Spotify's queue (e.g. the
+	// streamer removed them directly in Spotify), while tolerating the queue's
+	// limited horizon and Spotify's eventual consistency.
+	public static void Reconcile(List<SpotifyTrackInfo> liveQueue, string? currentTrackId) {
+		bool horizonTruncated = liveQueue.Count >= SpotifyQueueHorizon;
+		var live = new HashSet<string>(liveQueue.Select(t => t.TrackId), StringComparer.Ordinal);
+		if (!string.IsNullOrEmpty(currentTrackId)) live.Add(currentTrackId);
+
+		lock (_lock) {
+			foreach (var r in Pending.Where(r => !r.IsPlayed).ToList()) {
+				if (live.Contains(r.TrackId)) { _missStrikes.Remove(r.TrackId); continue; }
+				if (horizonTruncated) continue;
+				if ((DateTime.Now - r.RequestedAt).TotalSeconds < GraceSeconds) continue;
+
+				var misses = _missStrikes.GetValueOrDefault(r.TrackId) + 1;
+				if (misses >= MissesBeforeDrop) {
+					Pending.Remove(r);
+					_missStrikes.Remove(r.TrackId);
+					AppLogger.Instance.Information(
+						$"Removed stale request (gone from Spotify queue): {r.Artist} - {r.Title} ({r.Requester})");
+				}
+				else _missStrikes[r.TrackId] = misses;
+			}
+		}
+	}
 }
 
 public class RequestObject

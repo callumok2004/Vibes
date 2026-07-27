@@ -216,6 +216,9 @@ public class SpotifyService
 			if (trackChanged) TrackChanged?.Invoke(track);
 
 			var queue = await GetQueueAsync();
+			if (queue == null) return; // fetch failed - keep last known queue, don't reconcile
+			if (AppConfig.Instance.PruneRemovedFromSpotify)
+				SongQueue.Reconcile(queue, CurrentTrack?.TrackId);
 			QueueChanged?.Invoke(queue);
 		}
 		catch (Exception ex) {
@@ -382,9 +385,11 @@ public class SpotifyService
 		}
 	}
 
-	public async Task<List<SpotifyTrackInfo>> GetQueueAsync() {
+	// Returns null when the queue could not be fetched (auth/API failure), which
+	// is deliberately distinct from an empty-but-successful queue.
+	public async Task<List<SpotifyTrackInfo>?> GetQueueAsync() {
 		var token = Credentials.Instance.SpotifyAccessToken;
-		if (string.IsNullOrEmpty(token)) return [];
+		if (string.IsNullOrEmpty(token)) return null;
 
 		using var req = new HttpRequestMessage(HttpMethod.Get,
 			"https://api.spotify.com/v1/me/player/queue");
@@ -394,7 +399,7 @@ public class SpotifyService
 		if (!resp.IsSuccessStatusCode) {
 			var body = await resp.Content.ReadAsStringAsync();
 			AppLogger.Instance.Warning($"Spotify queue: {resp.StatusCode} | {body}");
-			return [];
+			return null;
 		}
 
 		var json = JsonSerializer.Deserialize<JsonElement>(await resp.Content.ReadAsStringAsync());

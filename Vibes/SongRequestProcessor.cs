@@ -28,7 +28,11 @@ public class SongRequestProcessor
 				msg.Message.StartsWith(t + " ", StringComparison.OrdinalIgnoreCase));
 			if (!matched) continue;
 
-			var level = GetUserLevel(msg);
+			// Only worth a follower lookup if this command allows one of the two levels
+			// but not the other.
+			var followerMatters = cmd.AllowedUserLevels.Contains((int)TwitchUserLevel.Follower)
+			                   != cmd.AllowedUserLevels.Contains((int)TwitchUserLevel.Viewer);
+			var level = await GetUserLevel(msg, followerMatters);
 			if (!cmd.AllowedUserLevels.Contains((int)level)) return;
 
 			if (cmd.CooldownSeconds > 0 &&
@@ -223,8 +227,12 @@ public class SongRequestProcessor
 			return;
 		}
 
-		// User level
-		var level = GetUserLevel(msg);
+		// User level. The follower lookup only changes the outcome if followers are
+		// gated differently from viewers - either by the minimum level, or by the
+		// per-user request cap below.
+		var followerMatters = cfg.TwSrUserLevel == (int)TwitchUserLevel.Follower
+		                   || cfg.TwSrMaxReqFollower != cfg.TwSrMaxReqViewer;
+		var level = await GetUserLevel(msg, followerMatters);
 		if ((int)level < cfg.TwSrUserLevel) {
 			await ReplyAsync(Format(cfg.BotRespLevelTooLow, user: user,
 				level: LevelName((TwitchUserLevel)cfg.TwSrUserLevel)));
@@ -354,7 +362,10 @@ public class SongRequestProcessor
 			? TwitchService.Instance.SendMessageAsync(msg)
 			: Task.CompletedTask;
 
-	private static TwitchUserLevel GetUserLevel(TwitchChatMessage msg) {
+	// Everything above Follower comes from the chat badges. Twitch has no follower
+	// badge, so Follower needs a Helix lookup - only done when the caller actually
+	// treats followers differently from plain viewers.
+	private static async Task<TwitchUserLevel> GetUserLevel(TwitchChatMessage msg, bool checkFollower) {
 		var badges = msg.Tags.GetValueOrDefault("badges") ?? "";
 		if (badges.Contains("broadcaster"))     return TwitchUserLevel.Broadcaster;
 		if (badges.Contains("moderator"))       return TwitchUserLevel.Moderator;
@@ -362,6 +373,11 @@ public class SongRequestProcessor
 		if (badges.Contains("subscriber/3000")) return TwitchUserLevel.SubscriberT3;
 		if (badges.Contains("subscriber/2000")) return TwitchUserLevel.SubscriberT2;
 		if (badges.Contains("subscriber"))      return TwitchUserLevel.Subscriber;
+
+		if (checkFollower &&
+		    await TwitchService.Instance.IsFollowerAsync(msg.Tags.GetValueOrDefault("user-id") ?? ""))
+			return TwitchUserLevel.Follower;
+
 		return TwitchUserLevel.Viewer;
 	}
 

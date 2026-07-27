@@ -60,6 +60,13 @@ public class TwitchService
 	private static readonly HttpClient _http = new();
 	private string _channel = "";
 
+	// Follow status is not in the IRC tags, so it has to be looked up via Helix.
+	// Cached per user id; misses are re-checked after a short window so a fresh
+	// follow is picked up without hammering the API.
+	private readonly Dictionary<string, (bool IsFollower, DateTime CheckedAt)> _followerCache = [];
+	private static readonly TimeSpan FollowerCacheTtl = TimeSpan.FromMinutes(5);
+	private bool _followerScopeMissing;
+
 	private const string ChannelClientId = "v6jcyt4gcec7vl8luchszezpwnnkip";
 	private const string BotClientId     = "uu3ymsw69n8xoz6evskj2ycwt9evr8";
 	private const int    ChannelPort     = 7777;
@@ -72,7 +79,9 @@ public class TwitchService
 	public async Task AuthorizeAsync() {
 		StatusChanged?.Invoke("Opening browser for authorization…");
 		var token = await ImplicitGrantAsync(ChannelClientId, ChannelPort,
-			"chat:read chat:edit channel:read:redemptions channel:manage:redemptions");
+			"chat:read chat:edit channel:read:redemptions channel:manage:redemptions moderator:read:followers");
+		_followerScopeMissing = false;
+		_followerCache.Clear();
 		Credentials.Instance.TwitchAccessToken    = token;
 		Credentials.Instance.TwitchBroadcasterId = "";
 		Credentials.Save();
@@ -222,6 +231,51 @@ public class TwitchService
 		}
 		catch (Exception ex) {
 			AppLogger.Instance.Warning($"Failed to fetch broadcaster ID: {ex.Message}");
+		}
+	}
+
+	// Returns false (i.e. treat as a plain viewer) whenever follow status can't be
+	// determined - missing scope on an older token, no broadcaster id yet, or an API
+	// error. That matches the pre-follower-support behaviour, so nothing breaks.
+	public async Task<bool> IsFollowerAsync(string userId) {
+		if (_followerScopeMissing || string.IsNullOrEmpty(userId)) return false;
+
+		var broadcasterId = Credentials.Instance.TwitchBroadcasterId;
+		if (string.IsNullOrEmpty(broadcasterId)) return false;
+		if (userId == broadcasterId) return true;
+
+		if (_followerCache.TryGetValue(userId, out var cached) &&
+		    (cached.IsFollower || DateTime.Now - cached.CheckedAt < FollowerCacheTtl))
+			return cached.IsFollower;
+
+		try {
+			using var req = new HttpRequestMessage(HttpMethod.Get,
+				"https://api.twitch.tv/helix/channels/followers" +
+				$"?broadcaster_id={broadcasterId}&user_id={userId}");
+			req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", Credentials.Instance.TwitchAccessToken.Trim());
+			req.Headers.Add("Client-Id", ChannelClientId);
+			var resp = await _http.SendAsync(req);
+
+			if (resp.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden) {
+				_followerScopeMissing = true;
+				AppLogger.Instance.Warning(
+					"Follower lookups disabled: the Twitch token is missing the 'moderator:read:followers' scope. " +
+					"Re-authorize Twitch to enable the Follower user level.");
+				return false;
+			}
+			if (!resp.IsSuccessStatusCode) {
+				AppLogger.Instance.Warning($"Follower lookup failed ({(int)resp.StatusCode}) for user {userId}");
+				return false;
+			}
+
+			var json     = JsonSerializer.Deserialize<JsonElement>(await resp.Content.ReadAsStringAsync());
+			var follows  = json.TryGetProperty("data", out var data) && data.GetArrayLength() > 0;
+			_followerCache[userId] = (follows, DateTime.Now);
+			return follows;
+		}
+		catch (Exception ex) {
+			AppLogger.Instance.Warning($"Follower lookup failed for user {userId}: {ex.Message}");
+			return false;
 		}
 	}
 

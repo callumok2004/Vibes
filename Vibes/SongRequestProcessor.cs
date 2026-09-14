@@ -282,7 +282,13 @@ public class SongRequestProcessor
 		}
 
 		// Resolve query - URL/URI or search term
-		var trackId = ExtractSpotifyTrackId(query);
+		var (isSpotifyLink, trackId) = ParseSpotifyLink(query);
+		if (isSpotifyLink && trackId == null) {
+			await ReplyAsync(Format(cfg.BotRespNotATrack, user: user));
+			await Refund(RefundCondition.SongUnavailable);
+			return;
+		}
+
 		SpotifyTrackInfo? track;
 		if (trackId != null)
 			track = await SpotifyService.Instance.GetTrackAsync(trackId);
@@ -403,18 +409,27 @@ public class SongRequestProcessor
 		_                            => "Viewer",
 	};
 
-	private static string? ExtractSpotifyTrackId(string query) {
+	// IsSpotifyLink separates "not a link, search for it" from "a Spotify link that
+	// isn't a track" - the latter must be rejected, since searching for an album URL
+	// returns an arbitrary track.
+	private static (bool IsSpotifyLink, string? TrackId) ParseSpotifyLink(string query) {
 		var q = query.Trim();
-		if (q.StartsWith("spotify:track:", StringComparison.OrdinalIgnoreCase))
-			return q["spotify:track:".Length..].Split('?')[0].Trim();
-		if (q.StartsWith("http", StringComparison.OrdinalIgnoreCase)) {
-			if (!Uri.TryCreate(q, UriKind.Absolute, out var uri)) return null;
-			var segments = uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
-			if (segments.Length >= 2 && segments[^2].Equals("track", StringComparison.OrdinalIgnoreCase))
-				return segments[^1];
-			return null;
+
+		if (q.StartsWith("spotify:", StringComparison.OrdinalIgnoreCase)) {
+			if (!q.StartsWith("spotify:track:", StringComparison.OrdinalIgnoreCase)) return (true, null);
+			var id = q["spotify:track:".Length..].Split('?')[0].Trim();
+			return (true, id.Length > 0 ? id : null);
 		}
-		return null;
+
+		if (!q.StartsWith("http", StringComparison.OrdinalIgnoreCase)) return (false, null);
+		if (!Uri.TryCreate(q, UriKind.Absolute, out var uri)) return (false, null);
+		if (!uri.Host.Equals("open.spotify.com", StringComparison.OrdinalIgnoreCase) &&
+		    !uri.Host.Equals("spotify.link", StringComparison.OrdinalIgnoreCase)) return (false, null);
+
+		var segments = uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+		if (segments.Length >= 2 && segments[^2].Equals("track", StringComparison.OrdinalIgnoreCase))
+			return (true, segments[^1]);
+		return (true, null);
 	}
 
 	private static string Format(string template,

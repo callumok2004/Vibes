@@ -12,7 +12,7 @@ public class CloudflareService
 	private static readonly HttpClient _http = new();
 	private const string ApiBase = "https://api.cloudflare.com/client/v4";
 
-	private CancellationTokenSource? _pushDebounce;
+	private volatile bool _pushPending;
 	private string _lastPushedPayload = "";
 
 	private CloudflareService() { }
@@ -104,20 +104,23 @@ public class CloudflareService
 		var cfg = AppConfig.Instance;
 		if (!cfg.CloudflareQueueEnabled || string.IsNullOrEmpty(cfg.CloudflareWorkerUrl)) return;
 
-		_pushDebounce?.Cancel();
-		_pushDebounce = new CancellationTokenSource();
-		var ct = _pushDebounce.Token;
+		// Spotify polls (and so raises QueueChanged) every couple of seconds, so a
+		// debounce that restarted on every call could be starved forever. Let a
+		// pending push run instead - it always sends the latest state.
+		if (_pushPending) return;
+		_pushPending = true;
 
 		_ = Task.Run(async () => {
 			try {
-				await Task.Delay(2000, ct);
+				await Task.Delay(2000);
+				_pushPending = false;
 				await PushAsync(cfg.CloudflareWorkerUrl);
 			}
-			catch (OperationCanceledException) { }
 			catch (Exception ex) {
+				_pushPending = false;
 				AppLogger.Instance.Warning($"Queue page push failed: {ex.Message}");
 			}
-		}, ct);
+		});
 	}
 
 	private async Task PushAsync(string workerUrl) {
@@ -300,13 +303,14 @@ h1{font-size:22px;font-weight:700;margin-bottom:2px}
 .section-label{font-size:10px;font-weight:700;color:#adadb8;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
 .now-playing{display:flex;align-items:center;gap:14px;background:#18181b;border:1px solid #9146ff55;border-radius:8px;padding:14px 16px;margin-bottom:24px}
 .np-art{width:56px;height:56px;border-radius:4px;object-fit:cover;flex-shrink:0;background:#2d2d35}
-.np-info{min-width:0}
+.np-info{min-width:0;overflow-wrap:anywhere}
 .np-title{font-size:15px;font-weight:600}
 .np-meta{font-size:12px;color:#adadb8;margin-top:3px}
 .req{color:#9146ff}
 .song{display:flex;align-items:center;gap:12px;background:#18181b;border-radius:6px;padding:10px 14px;margin-bottom:2px}
 .song-art{width:36px;height:36px;border-radius:3px;object-fit:cover;flex-shrink:0;background:#2d2d35}
 .pos{font-size:11px;color:#4a4a55;width:22px;text-align:right;flex-shrink:0}
+.info{min-width:0;overflow-wrap:anywhere}
 .song-title{font-size:13px;font-weight:500}
 .song-meta{font-size:11px;color:#4a4a55;margin-top:2px}
 .empty{color:#4a4a55;font-size:13px;padding:12px 0}

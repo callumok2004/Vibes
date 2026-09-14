@@ -1009,6 +1009,13 @@
 										<TextBlock x:Name="RespNoSongPreview" Margin="0,4,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" TextWrapping="Wrap" />
 									</StackPanel>
 								</Border>
+								<Border Margin="0,0,0,2" Padding="18,10" Background="#0E0E10" CornerRadius="4" Tag="album playlist artist link not a track response">
+									<StackPanel>
+										<Grid><TextBlock VerticalAlignment="Center" FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="Not a track link" /><Button HorizontalAlignment="Right" VerticalAlignment="Center" Content="Reset" Tag="RespNotATrackInput" Click="ResetResponse_Click" Style="{StaticResource ActionBtn}" Padding="8,2" FontSize="11" /></Grid>
+										<TextBox x:Name="RespNotATrackInput" Margin="0,6,0,0" Style="{StaticResource SettingsInput}" TextChanged="Resp_Changed" />
+										<TextBlock x:Name="RespNotATrackPreview" Margin="0,4,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" TextWrapping="Wrap" />
+									</StackPanel>
+								</Border>
 								<Border Margin="0,0,0,2" Padding="18,10" Background="#0E0E10" CornerRadius="4" Tag="blocked artist song blacklist response">
 									<StackPanel>
 										<Grid><TextBlock VerticalAlignment="Center" FontFamily="Segoe UI" FontSize="12" Foreground="#ADADB8" Text="Song/artist blocked" /><Button HorizontalAlignment="Right" VerticalAlignment="Center" Content="Reset" Tag="RespBlacklistInput" Click="ResetResponse_Click" Style="{StaticResource ActionBtn}" Padding="8,2" FontSize="11" /></Grid>

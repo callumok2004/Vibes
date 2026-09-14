@@ -184,6 +184,7 @@ public partial class MainWindow : Window
 		RespSuccessInput.Text      = c.BotRespSuccess;
 		RespErrorInput.Text        = c.BotRespError;
 		RespNoSongInput.Text       = c.BotRespNoSong;
+		RespNotATrackInput.Text    = c.BotRespNotATrack;
 		RespBlacklistInput.Text    = c.BotRespBlacklist;
 		RespExplicitInput.Text     = c.BotRespExplicit;
 		RespTooLongInput.Text      = c.BotRespTooLong;
@@ -496,6 +497,7 @@ public partial class MainWindow : Window
 		c.BotRespSuccess      = RespSuccessInput.Text;
 		c.BotRespError        = RespErrorInput.Text;
 		c.BotRespNoSong       = RespNoSongInput.Text;
+		c.BotRespNotATrack    = RespNotATrackInput.Text;
 		c.BotRespBlacklist    = RespBlacklistInput.Text;
 		c.BotRespExplicit     = RespExplicitInput.Text;
 		c.BotRespTooLong      = RespTooLongInput.Text;
@@ -534,6 +536,7 @@ public partial class MainWindow : Window
 			"RespSuccessInput"      => defaults.BotRespSuccess,
 			"RespErrorInput"        => defaults.BotRespError,
 			"RespNoSongInput"       => defaults.BotRespNoSong,
+			"RespNotATrackInput"    => defaults.BotRespNotATrack,
 			"RespBlacklistInput"    => defaults.BotRespBlacklist,
 			"RespExplicitInput"     => defaults.BotRespExplicit,
 			"RespTooLongInput"      => defaults.BotRespTooLong,
@@ -567,7 +570,7 @@ public partial class MainWindow : Window
 
 	private void UpdateAllResponsePreviews() {
 		foreach (string name in new[] {
-			"RespSuccessInput", "RespErrorInput", "RespNoSongInput", "RespBlacklistInput",
+			"RespSuccessInput", "RespErrorInput", "RespNoSongInput", "RespNotATrackInput", "RespBlacklistInput",
 			"RespExplicitInput", "RespTooLongInput", "RespCooldownInput", "RespUserCooldownInput",
 			"RespMaxReqInput", "RespQueueFullInput", "RespIsInQueueInput", "RespLevelTooLowInput",
 			"RespSongInput", "RespNextInput", "RespPosInput", "RespQueueInput",

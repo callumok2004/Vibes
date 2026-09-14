@@ -73,6 +73,7 @@ public class AppConfig
 	public string BotRespSuccess { get; set; } = "@{user} - {artist} - {title} added to queue at #{pos}!";
 	public string BotRespError { get; set; } = "@{user} Something went wrong adding that song.";
 	public string BotRespNoSong { get; set; } = "@{user} No song found for that search.";
+	public string BotRespNotATrack { get; set; } = "@{user} Only track links work.";
 	public string BotRespBlacklist { get; set; } = "@{user} That artist or song is blocked.";
 	public string BotRespExplicit { get; set; } = "@{user} Explicit songs are not allowed.";
 	public string BotRespTooLong { get; set; } = "@{user} Song is too long (max {max} min).";

@@ -86,7 +86,7 @@ public class SongRequestProcessor
 
 		switch (type) {
 			case CommandType.Song: {
-				var track = SpotifyService.Instance.CurrentTrack;
+				var track = TwitchService.HideNowPlaying ? null : SpotifyService.Instance.CurrentTrack;
 				if (track == null) { await ReplyAsync("Nothing is playing right now."); return; }
 				var req = SongQueue.Pending.FirstOrDefault(r => r.TrackId == track.TrackId);
 				var requester = req != null ? $", requested by @{req.Requester}" : "";

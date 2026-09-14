@@ -57,6 +57,10 @@ public partial class MainWindow : Window
 		SpotifyService.Instance.QueueChanged  += OnQueueChanged;
 		SpotifyService.Instance.TrackChanged  += _ => CloudflareService.Instance.SchedulePush();
 		SpotifyService.Instance.QueueChanged  += _ => CloudflareService.Instance.SchedulePush();
+		TwitchService.Instance.LiveStatusChanged += _ => {
+			CloudflareService.Instance.SchedulePush();
+			Dispatcher.Invoke(UpdateLiveStatusBar);
+		};
 		SpotifyService.Instance.StatusChanged += s => Dispatcher.Invoke(() => UpdateSpotifyStatus(s));
 
 		TwitchService.Instance.StatusChanged  += s => Dispatcher.Invoke(() => { UpdateTwitchStatus(s); UpdateBotStatusBar(); });
@@ -72,6 +76,7 @@ public partial class MainWindow : Window
 
 		UpdateSrStatus();
 		UpdateBotStatusBar();
+		UpdateLiveStatusBar();
 		UpdateStatsTabVisibility();
 
 		_statusTimer.Start();
@@ -109,6 +114,7 @@ public partial class MainWindow : Window
 		AutoConnectCheck.IsChecked    = c.TwAutoConnect;
 		UpdateBotAuthStatus();
 		AnnounceInChatCheck.IsChecked = c.AnnounceInChat;
+		HideWhenOfflineCheck.IsChecked = c.HideWhenOffline;
 
 		// Spotify
 		SpotifyClientIdInput.Text = c.SpotifyClientId;
@@ -598,6 +604,7 @@ public partial class MainWindow : Window
 		if (c.UseBotAccount != botWasEnabled) _ = TwitchService.Instance.ApplyBotToggleAsync();
 		c.TwAutoConnect       = AutoConnectCheck.IsChecked      == true;
 		c.AnnounceInChat      = AnnounceInChatCheck.IsChecked   == true;
+		c.HideWhenOffline     = HideWhenOfflineCheck.IsChecked  == true;
 		c.AddSrToPlaylist     = AddToPlaylistCheck.IsChecked    == true;
 		c.LimitSrToPlaylist   = LimitToPlaylistCheck.IsChecked  == true;
 		c.BlockAllExplicitSongs   = BlockExplicitCheck.IsChecked   == true;
@@ -610,9 +617,11 @@ public partial class MainWindow : Window
 		c.TrackStats              = TrackStatsCheck.IsChecked        == true;
 		c.CloudflareQueueEnabled  = CfEnabledCheck.IsChecked        == true;
 		AppConfig.Save();
+		CloudflareService.Instance.SchedulePush();
 		ApplyStartWithWindows(c.StartWithWindows);
 		UpdateSrStatus();
 		UpdateBotStatusBar();
+		UpdateLiveStatusBar();
 		UpdateStatsTabVisibility();
 	}
 
@@ -913,6 +922,20 @@ public partial class MainWindow : Window
 			? new SolidColorBrush(Color.FromRgb(0x91, 0x46, 0xFF))
 			: new SolidColorBrush(Color.FromRgb(0x4A, 0x4A, 0x55));
 		SrStatusText.Text = $"Requests: {(enabled ? "on" : "off")}";
+	}
+
+	private void UpdateLiveStatusBar() {
+		var live = TwitchService.Instance.LiveStatus;
+		LiveDot.Fill = live switch {
+			true  => new SolidColorBrush(Color.FromRgb(0x00, 0xC8, 0x53)),
+			false => new SolidColorBrush(Color.FromRgb(0x4A, 0x4A, 0x55)),
+			null  => new SolidColorBrush(Color.FromRgb(0x4A, 0x4A, 0x55)),
+		};
+		LiveStatusText.Text = live switch {
+			true  => "Stream: live",
+			false => "Stream: offline",
+			null  => "Stream: pending",
+		};
 	}
 
 	private void UpdateBotStatusBar() {

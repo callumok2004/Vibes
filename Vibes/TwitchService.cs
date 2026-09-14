@@ -45,7 +45,17 @@ public class TwitchService
 	public event Action<string>?            StatusChanged;
 	public event Action<TwitchChatMessage>? MessageReceived;
 
+	public event Action<bool?>? LiveStatusChanged;
+
 	public bool IsConnected     { get; private set; }
+
+	// null until the first successful check - treated as "not live" so nothing is
+	// shared before the answer is known.
+	public bool? LiveStatus     { get; private set; }
+	public bool  IsStreamLive   => LiveStatus == true;
+
+	public static bool HideNowPlaying =>
+		AppConfig.Instance.HideWhenOffline && !Instance.IsStreamLive;
 	public bool IsAuthorized    => !string.IsNullOrEmpty(Credentials.Instance.TwitchAccessToken);
 	public bool IsBotAuthorized => !string.IsNullOrEmpty(Credentials.Instance.TwitchBotAccessToken);
 
@@ -181,6 +191,7 @@ public class TwitchService
 		IsConnected = true;
 		StatusChanged?.Invoke("Connected");
 		_ = ReadLoopAsync(_cts.Token);
+		_ = LiveStatusLoopAsync(_cts.Token);
 	}
 
 	private async Task ConnectBotAsync() {
@@ -232,6 +243,45 @@ public class TwitchService
 		catch (Exception ex) {
 			AppLogger.Instance.Warning($"Failed to fetch broadcaster ID: {ex.Message}");
 		}
+	}
+
+	// Polls the live state of the channel. Failures leave the last known state
+	// untouched, and an unchecked channel counts as offline, so HideWhenOffline
+	// never starts sharing on a bad API call.
+	private async Task LiveStatusLoopAsync(CancellationToken ct) {
+		while (!ct.IsCancellationRequested) {
+			await RefreshLiveStatusAsync();
+			try { await Task.Delay(TimeSpan.FromSeconds(60), ct); }
+			catch (OperationCanceledException) { return; }
+		}
+	}
+
+	public async Task RefreshLiveStatusAsync() {
+		var login = _channel;
+		if (string.IsNullOrEmpty(login) || string.IsNullOrEmpty(Credentials.Instance.TwitchAccessToken)) return;
+		try {
+			using var req = new HttpRequestMessage(HttpMethod.Get,
+				$"https://api.twitch.tv/helix/streams?user_login={Uri.EscapeDataString(login)}");
+			req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", Credentials.Instance.TwitchAccessToken.Trim());
+			req.Headers.Add("Client-Id", ChannelClientId);
+			var resp = await _http.SendAsync(req);
+			if (!resp.IsSuccessStatusCode) {
+				AppLogger.Instance.Warning($"Live status check failed: {resp.StatusCode}");
+				return;
+			}
+			var json = JsonSerializer.Deserialize<JsonElement>(await resp.Content.ReadAsStringAsync());
+			SetLiveStatus(json.GetProperty("data").GetArrayLength() > 0);
+		}
+		catch (Exception ex) {
+			AppLogger.Instance.Warning($"Live status check failed: {ex.Message}");
+		}
+	}
+
+	private void SetLiveStatus(bool? live) {
+		if (live == LiveStatus) return;
+		LiveStatus = live;
+		if (live != null) AppLogger.Instance.Information($"Stream is {(live == true ? "live" : "offline")}");
+		LiveStatusChanged?.Invoke(live);
 	}
 
 	// Returns false (i.e. treat as a plain viewer) whenever follow status can't be
@@ -481,6 +531,7 @@ public class TwitchService
 		_cts?.Cancel();
 		_botCts?.Cancel();
 		IsConnected = false;
+		SetLiveStatus(null);
 		StatusChanged?.Invoke("Disconnected");
 	}
 

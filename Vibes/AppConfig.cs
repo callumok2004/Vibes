@@ -12,6 +12,7 @@ public class AppConfig
 	public bool UseBotAccount { get; set; } = false;
 	public bool TwAutoConnect { get; set; } = true;
 	public bool AnnounceInChat { get; set; } = true;
+	public bool HideWhenOffline { get; set; } = true;
 
 	// -- SPOTIFY ---------------------------------------------------------------
 	public string SpotifyClientId { get; set; } = "";

@@ -121,7 +121,7 @@ public class CloudflareService
 	}
 
 	private async Task PushAsync(string workerUrl) {
-		var track    = SpotifyService.Instance.CurrentTrack;
+		var track    = TwitchService.HideNowPlaying ? null : SpotifyService.Instance.CurrentTrack;
 		var pending  = SongQueue.Pending.Where(r => !r.IsPlayed && r.TrackId != track?.TrackId).ToList();
 		var requester = track != null
 			? SongQueue.Pending.FirstOrDefault(r => r.TrackId == track.TrackId)?.Requester ?? ""

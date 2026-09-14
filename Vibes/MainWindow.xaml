@@ -726,6 +726,15 @@
 										<CheckBox x:Name="AnnounceInChatCheck" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Left" Checked="Cfg_CheckChanged" Unchecked="Cfg_CheckChanged" />
 									</Grid>
 								</Border>
+								<Border Margin="0,0,0,2" Padding="18,12" Background="#0E0E10" CornerRadius="4" Tag="privacy hide now playing offline live stream">
+									<Grid><Grid.ColumnDefinitions><ColumnDefinition Width="200" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+										<StackPanel VerticalAlignment="Center">
+											<TextBlock FontFamily="Segoe UI" FontSize="13" Foreground="#EFEFF1" Text="Hide when offline" />
+											<TextBlock Margin="0,2,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" Text="Don't share now playing unless the stream is live" />
+										</StackPanel>
+										<CheckBox x:Name="HideWhenOfflineCheck" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Left" Checked="Cfg_CheckChanged" Unchecked="Cfg_CheckChanged" />
+									</Grid>
+								</Border>
 							</StackPanel>
 
 							<!-- SPOTIFY -->
@@ -1357,6 +1366,8 @@
 					<StackPanel VerticalAlignment="Center" Orientation="Horizontal">
 						<Ellipse x:Name="TwitchDot"  Width="7" Height="7" Margin="0,0,5,0" Fill="#4A4A55" />
 						<TextBlock x:Name="TwitchStatusText"  Margin="0,0,16,0" FontFamily="Segoe UI" FontSize="11" Foreground="#ADADB8" Text="Twitch: disconnected" />
+						<Ellipse x:Name="LiveDot"    Width="7" Height="7" Margin="0,0,5,0" Fill="#4A4A55" />
+						<TextBlock x:Name="LiveStatusText"    Margin="0,0,16,0" FontFamily="Segoe UI" FontSize="11" Foreground="#ADADB8" Text="Stream: pending" />
 						<Ellipse x:Name="SpotifyDot" Width="7" Height="7" Margin="0,0,5,0" Fill="#4A4A55" />
 						<TextBlock x:Name="SpotifyStatusText" Margin="0,0,16,0" FontFamily="Segoe UI" FontSize="11" Foreground="#ADADB8" Text="Spotify: disconnected" />
 						<Ellipse x:Name="SrDot"      Width="7" Height="7" Margin="0,0,5,0" Fill="#4A4A55" />

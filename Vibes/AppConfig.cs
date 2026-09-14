@@ -119,6 +119,7 @@ public class AppConfig
 	public bool StartWithWindows { get; set; } = false;
 	public bool MinimizeToTray { get; set; } = true;
 	public bool TrackStats { get; set; } = true;
+	public int UpdateCheckHours { get; set; } = 1;
 
 	// -------------------------------------------------------------------------
 

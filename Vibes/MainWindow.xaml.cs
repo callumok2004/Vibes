@@ -27,6 +27,9 @@ public partial class MainWindow : Window
 	private ICollectionView? _logView;
 	private readonly DispatcherTimer _statusTimer;
 	private readonly DispatcherTimer _progressTimer;
+	private readonly DispatcherTimer _updateTimer;
+	private bool _updateAvailable;
+	private bool _updateToastDismissed;
 	private bool _configReady;
 	private System.Windows.Forms.NotifyIcon? _trayIcon;
 	private static readonly HttpClient _imageHttp = new();
@@ -37,6 +40,8 @@ public partial class MainWindow : Window
 		_statusTimer.Tick += (_, _) => UpdateStatus();
 		_progressTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
 		_progressTimer.Tick += (_, _) => TickProgress();
+		_updateTimer = new DispatcherTimer { Interval = TimeSpan.FromHours(1) };
+		_updateTimer.Tick += async (_, _) => await CheckForUpdatesSilentAsync();
 	}
 
 	private void Window_Loaded(object sender, RoutedEventArgs e) {
@@ -81,6 +86,8 @@ public partial class MainWindow : Window
 
 		_statusTimer.Start();
 		_progressTimer.Start();
+		ApplyUpdateCheckInterval();
+		_updateTimer.Start();
 		AppLogger.Instance.Information("Vibes started");
 
 // #if DEBUG
@@ -120,6 +127,7 @@ public partial class MainWindow : Window
 		SpotifyClientIdInput.Text = c.SpotifyClientId;
 		SpotifySecretInput.Password = c.SpotifyClientSecret;
 		SpotifyFetchRateInput.Text    = c.SpotifyFetchRate.ToString();
+		UpdateCheckHoursInput.Text    = c.UpdateCheckHours.ToString();
 		SpotifyCallbackPortInput.Text = c.SpotifyCallbackPort.ToString();
 		SpotifyPlaylistInput.Text     = c.SpotifyPlaylistId;
 		AddToPlaylistCheck.IsChecked = c.AddSrToPlaylist;
@@ -479,6 +487,10 @@ public partial class MainWindow : Window
 		c.CloudflareCustomUrl     = CfCustomUrlInput.Text.Trim();
 
 		if (int.TryParse(SpotifyFetchRateInput.Text,    out int fr))  c.SpotifyFetchRate      = Math.Max(1, fr);
+		if (int.TryParse(UpdateCheckHoursInput.Text,    out int uh)) {
+			c.UpdateCheckHours = Math.Clamp(uh, 1, 168);
+			ApplyUpdateCheckInterval();
+		}
 		if (int.TryParse(SpotifyCallbackPortInput.Text, out int cp))  c.SpotifyCallbackPort   = cp is >= 1024 and <= 65535 ? cp : 8888;
 		if (int.TryParse(CooldownInput.Text,         out int cd))  c.TwSrCooldown          = Math.Max(0, cd);
 		if (int.TryParse(PerUserCooldownInput.Text,  out int pcd)) c.TwSrPerUserCooldown   = Math.Max(0, pcd);
@@ -666,6 +678,7 @@ public partial class MainWindow : Window
 		ConfigPanel.Visibility= TabConfig.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
 		GuidePanel.Visibility = TabGuide.IsChecked  == true ? Visibility.Visible : Visibility.Collapsed;
 		if (TabStats.IsChecked == true) BuildStatsView();
+		RefreshUpdateNotice();
 	}
 
 	private void UpdateStatsTabVisibility() {
@@ -1274,13 +1287,37 @@ public partial class MainWindow : Window
 
 	// -- Version check ---------------------------------------------------------
 
+	// The toast shows on the now playing view; the status bar carries the notice on
+	// every other tab, so it's never shown twice.
+	private void RefreshUpdateNotice() {
+		if (UpdateToast == null) return;
+		var onMain = MainPanel.Visibility == Visibility.Visible;
+		UpdateToast.Visibility      = _updateAvailable && onMain && !_updateToastDismissed
+			? Visibility.Visible : Visibility.Collapsed;
+		UpdateNoticeText.Visibility = _updateAvailable && !onMain
+			? Visibility.Visible : Visibility.Collapsed;
+	}
+
+	private void DismissUpdateToast_Click(object sender, System.Windows.Input.MouseButtonEventArgs e) {
+		_updateToastDismissed = true;
+		e.Handled = true;
+		RefreshUpdateNotice();
+	}
+
+	private void ApplyUpdateCheckInterval() {
+		var hours = Math.Clamp(AppConfig.Instance.UpdateCheckHours, 1, 168);
+		_updateTimer.Interval = TimeSpan.FromHours(hours);
+	}
+
 	private async Task CheckForUpdatesSilentAsync() {
 		try {
 			var (updateAvailable, latest, _) = await VersionInfo.CheckForUpdateAsync();
 			if (!updateAvailable) return;
 			Dispatcher.Invoke(() => {
-				UpdateNoticeText.Text       = $"Update available: {latest}";
-				UpdateNoticeText.Visibility = Visibility.Visible;
+				UpdateNoticeText.Text = $"Update available: {latest}";
+				UpdateToastText.Text  = $"Update available: {latest}";
+				_updateAvailable      = true;
+				RefreshUpdateNotice();
 			});
 		}
 		catch { }

@@ -437,6 +437,16 @@
 
 				<!-- NOW PLAYING - -->
 				<Grid x:Name="MainPanel" Visibility="Visible">
+					<Border x:Name="UpdateToast" Panel.ZIndex="10" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,16,16,0" Padding="14,10" Background="#1F1F23" BorderBrush="#9146FF" BorderThickness="1" CornerRadius="6" Visibility="Collapsed">
+						<StackPanel Orientation="Horizontal">
+							<Ellipse Width="7" Height="7" Margin="0,0,10,0" VerticalAlignment="Center" Fill="#9146FF" />
+							<StackPanel VerticalAlignment="Center" Cursor="Hand" Background="Transparent" MouseLeftButtonUp="UpdateNotice_Click">
+								<TextBlock x:Name="UpdateToastText" FontFamily="Segoe UI" FontSize="12" FontWeight="SemiBold" Foreground="#EFEFF1" Text="Update available" />
+								<TextBlock Margin="0,2,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#ADADB8" Text="Click to open the release" />
+							</StackPanel>
+							<TextBlock Margin="16,0,0,0" VerticalAlignment="Top" FontFamily="Segoe UI" FontSize="12" Foreground="#4A4A55" Cursor="Hand" Text="&#x2715;" MouseLeftButtonUp="DismissUpdateToast_Click" />
+						</StackPanel>
+					</Border>
 					<Grid VerticalAlignment="Center" Margin="0,-40,0,0">
 						<StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
 							<Border Width="180" Height="180" HorizontalAlignment="Center" Background="#0E0E10" CornerRadius="6">
@@ -1209,6 +1219,15 @@
 											<TextBlock Margin="0,2,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" Text="Record top songs and requesters (shows the Stats tab)" />
 										</StackPanel>
 										<CheckBox x:Name="TrackStatsCheck" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Left" Checked="Cfg_CheckChanged" Unchecked="Cfg_CheckChanged" />
+									</Grid>
+								</Border>
+								<Border Margin="0,0,0,2" Padding="18,12" Background="#0E0E10" CornerRadius="4" Tag="update check interval hours">
+									<Grid><Grid.ColumnDefinitions><ColumnDefinition Width="200" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+										<StackPanel VerticalAlignment="Center">
+											<TextBlock FontFamily="Segoe UI" FontSize="13" Foreground="#EFEFF1" Text="Update check (hours)" />
+											<TextBlock Margin="0,2,0,0" FontFamily="Segoe UI" FontSize="11" Foreground="#4A4A55" Text="How often to check for a new version" />
+										</StackPanel>
+										<TextBox x:Name="UpdateCheckHoursInput" Grid.Column="1" MaxWidth="100" HorizontalAlignment="Left" Style="{StaticResource SettingsInput}" Tag="1" TextChanged="Cfg_Changed" />
 									</Grid>
 								</Border>
 								<TextBlock Margin="0,16,0,10" FontFamily="Segoe UI" FontSize="11" FontWeight="Bold" Foreground="#ADADB8" Text="VERSION" />
